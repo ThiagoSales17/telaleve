@@ -1,3 +1,4 @@
+import { setupFullscreen } from './fullscreen.js';
 const video = document.getElementById('video'), status = document.getElementById('status'), start = document.getElementById('start');
 const initial = location.hash.slice(1);
 history.replaceState(null, '', location.pathname);
@@ -115,8 +116,6 @@ start.onclick = () => { if (!initial && !resume) {
     video.play();
     return;
 } stopped = false; deadline = 0; connect(); };
-document.getElementById('fullscreen').onclick = () => { const el = document.documentElement; if (el.requestFullscreen)
-    el.requestFullscreen().catch(() => show('Tela cheia indisponível neste navegador.')); };
+setupFullscreen(document.getElementById('stage'), document.getElementById('fullscreen'), document.getElementById('exit-fullscreen'));
 document.getElementById('fit').onclick = e => { const fill = video.style.objectFit !== 'cover'; video.style.objectFit = fill ? 'cover' : 'contain'; e.target.textContent = fill ? 'Mostrar tela inteira' : 'Preencher tela'; };
 window.addEventListener('pagehide', () => { stopped = true; clearTimeout(timer); cleanup(); ws?.close(); });
-export {};

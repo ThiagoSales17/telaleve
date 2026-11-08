@@ -301,6 +301,15 @@ fn main() {
                         }),
                     )
                     .route(
+                        "/fullscreen.js",
+                        get(|| async {
+                            (
+                                [("content-type", "text/javascript")],
+                                include_str!("../../web/fullscreen.js"),
+                            )
+                        }),
+                    )
+                    .route(
                         "/style.css",
                         get(|| async {
                             (

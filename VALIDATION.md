@@ -59,3 +59,9 @@ A integração é ignorada por padrão porque requer X11 acessível. Executar ex
 
 AppImage otimizado para Debian 13 amd64/X11 gerado com dependências de mídia e WebKitGTK. Abertura em modo de extração, serviço HTTP e recusa de WebSocket não autorizado passaram. Os seis testes nativos também passaram usando somente os plugins empacotados, sem caminhos de plugins do sistema. Detalhes em APPIMAGE.md. Compatibilidade em sistema limpo e Android continua pendente.
 
+## Correção 0.1.1 — tela cheia no celular
+
+O visualizador passa a expandir somente a área do vídeo. Adicionado botão de saída sobre o vídeo, sincronização com saída pelo navegador e modo expandido quando a API nativa é indisponível ou recusada. Layout ajustado para ocupar a altura disponível, incluindo celular na horizontal. No modo alternativo, as barras do navegador podem permanecer visíveis.
+
+Cinco testes automatizados passaram (entrada/saída, saída externa, API ausente, API recusada e API prefixada). No navegador de teste, foram verificados os tamanhos 390×844 e 844×390; o modo expandido removeu cabeçalho e navegação, o botão de saída restaurou os controles e os limites da área de vídeo coincidiram com a viewport 844×390. O teste foi sem transmissão. Não foi possível validar no Android físico do usuário.
+

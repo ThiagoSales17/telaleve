@@ -1,3 +1,4 @@
+import { setupFullscreen } from './fullscreen.js';
 const video=(document.getElementById('video') as HTMLVideoElement), status=document.getElementById('status'), start=(document.getElementById('start') as HTMLButtonElement);
 const initial=location.hash.slice(1);history.replaceState(null,'',location.pathname);
 let resume=null,ws=null,pc=null,stopped=false,deadline=0,timer=null,feedback=null,remoteIce=[],lastPackets=0,lastLost=0;
@@ -27,7 +28,7 @@ async function connect(){
  ws.onerror=()=>show('Confira o Wi-Fi e a porta 9876 no computador.');
 }
 start.onclick=()=>{if(!initial&&!resume){show('Leia o QR code no computador.');return;}if(ws?.readyState===WebSocket.OPEN){video.play();return;}stopped=false;deadline=0;connect();};
-document.getElementById('fullscreen').onclick=()=>{const el=document.documentElement;if(el.requestFullscreen)el.requestFullscreen().catch(()=>show('Tela cheia indisponível neste navegador.'));};
+setupFullscreen(document.getElementById('stage'), document.getElementById('fullscreen') as HTMLButtonElement, document.getElementById('exit-fullscreen') as HTMLButtonElement);
 document.getElementById('fit').onclick=e=>{const fill=video.style.objectFit!=='cover';video.style.objectFit=fill?'cover':'contain';(e.target as HTMLButtonElement).textContent=fill?'Mostrar tela inteira':'Preencher tela';};
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(timer);cleanup();ws?.close();});
 
