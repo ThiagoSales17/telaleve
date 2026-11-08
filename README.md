@@ -51,6 +51,10 @@ Executar a lista em VALIDATION.md em Debian 13 e Android antes de distribuir. Wa
 
 Com o emissor transmitindo, encontre o PID e execute `python3 scripts/measure.py PID --seconds 1800 --output telaleve.csv`. Repita com o PID principal do Deskreen e a mesma configuração. O CSV soma RSS da árvore de processos (incluindo páginas compartilhadas contadas em cada processo) e informa CPU em relação a um núcleo. Não mede consumo da GPU nem atraso entre telas.
 
+## AppImage
+
+Também disponível como `TelaLeve-0.1.0-x86_64.AppImage`, sem instalação via apt. Consulte [APPIMAGE.md](APPIMAGE.md) para execução, modo sem FUSE e validações.
+
 ## GitHub
 
 Instaladores AppImage e Debian estão nas [Releases privadas](https://github.com/ThiagoSales17/telaleve/releases). É necessário entrar na conta com acesso ao repositório. Binários, caches e dependências não são versionados no Git. Consulte HISTORY.md para a organização retrospectiva dos commits.
