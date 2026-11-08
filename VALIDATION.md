@@ -65,3 +65,6 @@ O visualizador passa a expandir somente a área do vídeo. Adicionado botão de 
 
 Cinco testes automatizados passaram (entrada/saída, saída externa, API ausente, API recusada e API prefixada). No navegador de teste, foram verificados os tamanhos 390×844 e 844×390; o modo expandido removeu cabeçalho e navegação, o botão de saída restaurou os controles e os limites da área de vídeo coincidiram com a viewport 844×390. O teste foi sem transmissão. Não foi possível validar no Android físico do usuário.
 
+## Ajuste 0.1.2 — vídeo sem botão sobreposto
+
+Removido o botão de saída do vídeo. Na tela cheia nativa, a saída fica a cargo do navegador/Voltar do Android. O modo expandido alternativo cria uma entrada temporária no histórico: Voltar restaura os controles sem sair do visualizador. Escape também restaura o modo alternativo. Seis testes frontend passaram, incluindo ausência do botão, saída nativa sem alterar histórico, saída por Voltar e restauração por Avançar. Não testado em Android físico.

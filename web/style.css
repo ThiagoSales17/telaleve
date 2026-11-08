@@ -10,6 +10,3 @@
 @media(max-height:450px){.viewer header{padding:8px 16px}.viewer header p{margin:4px 0}.viewer nav{padding:8px}.viewer h1{font-size:20px}}
 
 .video-stage:-webkit-full-screen{position:fixed;inset:0;width:100vw;height:100vh;z-index:100;background:#000}
-
-.exit-fullscreen{position:absolute;z-index:2;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));min-height:44px;background:#182018dd;color:#fff;border:1px solid #798574;opacity:.8}
-.exit-fullscreen:hover,.exit-fullscreen:focus-visible{opacity:1}

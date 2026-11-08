@@ -28,7 +28,7 @@ async function connect(){
  ws.onerror=()=>show('Confira o Wi-Fi e a porta 9876 no computador.');
 }
 start.onclick=()=>{if(!initial&&!resume){show('Leia o QR code no computador.');return;}if(ws?.readyState===WebSocket.OPEN){video.play();return;}stopped=false;deadline=0;connect();};
-setupFullscreen(document.getElementById('stage'), document.getElementById('fullscreen') as HTMLButtonElement, document.getElementById('exit-fullscreen') as HTMLButtonElement);
+setupFullscreen(document.getElementById('stage'), document.getElementById('fullscreen') as HTMLButtonElement);
 document.getElementById('fit').onclick=e=>{const fill=video.style.objectFit!=='cover';video.style.objectFit=fill?'cover':'contain';(e.target as HTMLButtonElement).textContent=fill?'Mostrar tela inteira':'Preencher tela';};
 window.addEventListener('pagehide',()=>{stopped=true;clearTimeout(timer);cleanup();ws?.close();});
 

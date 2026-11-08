@@ -116,6 +116,6 @@ start.onclick = () => { if (!initial && !resume) {
     video.play();
     return;
 } stopped = false; deadline = 0; connect(); };
-setupFullscreen(document.getElementById('stage'), document.getElementById('fullscreen'), document.getElementById('exit-fullscreen'));
+setupFullscreen(document.getElementById('stage'), document.getElementById('fullscreen'));
 document.getElementById('fit').onclick = e => { const fill = video.style.objectFit !== 'cover'; video.style.objectFit = fill ? 'cover' : 'contain'; e.target.textContent = fill ? 'Mostrar tela inteira' : 'Preencher tela'; };
 window.addEventListener('pagehide', () => { stopped = true; clearTimeout(timer); cleanup(); ws?.close(); });
