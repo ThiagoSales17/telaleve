@@ -1,0 +1,61 @@
+# Validação da implementação inicial
+
+## Ambiente e evidências
+
+- Ambiente disponível: Debian GNU/Linux 13, sessão declarada X11, arquitetura amd64.
+- Seis testes Rust passaram: controle de acesso, expiração, retomada, resolução sem ampliação, identificação de codec e integração nativa.
+- Integração X11: resposta SDP produzida, vinte trocas alternando monitor e janela concluídas em aproximadamente 1,2 segundo no teste inteiro; origem inválida preservou a captura anterior. O teste não conectou um receptor de mídia real e NÃO mede tempo até a imagem aparecer no celular.
+- Captura de três quadros e codificação VP8 com GStreamer concluídas.
+- CPU disponível: Intel Core i7-2600, 8 CPUs lógicas. GStreamer 1.26.2; GTK 3.24.49; WebKitGTK 2.54.0.
+- Compilação TypeScript concluída; sintaxe JavaScript conferida com Node.
+- Enumeração X11 compilada no pacote independente de testes.
+- `cargo check` de todo o desktop passou. Build otimizado foi gerado com `opt-level=2` e símbolos removidos.
+- Instalação global de dependências indisponível: `sudo` exige senha. Pacotes de desenvolvimento baixados e extraídos em diretório de trabalho para tentar verificar o Rust sem alterar o sistema.
+- Não há Android conectado nem gravação de alta velocidade. Nenhuma medição ponta a ponta foi realizada.
+
+## Roteiro manual de aceite
+
+| Cenário | Resultado exigido | Estado |
+|---|---|---|
+| QR e aprovação | Nenhuma captura/transmissão antes de aprovar | Pendente |
+| Código expirado/reutilizado e segundo receptor | Recusados | Lógica unitária parcial; integração pendente |
+| Fluxo contínuo de 30 minutos | Sem quedas nem crescimento contínuo de RAM | Pendente |
+| 20 trocas de monitor/janela | Sem novo pareamento; registrar duração | Pipeline nativo passou; experiência no Android pendente |
+| Falha na nova captura | Captura anterior preservada | Origem com dimensões inválidas testada; timeout/permissão pendentes |
+| Janela fechada/monitor removido | Avisar, suspender imagem, exigir seleção | Pendente |
+| Wi-Fi interrompido e retomado | Retomar dentro de 30s após detecção | Pendente |
+| Retomada após prazo | Exigir novo QR | Unitário passou; integração pendente |
+| H.264 por hardware e VP8 | Vídeo decodificado no Chrome Android | Pendente |
+| Pacote em Debian 13 limpo | Dependências resolvidas e aplicativo abre | Pendente |
+
+## Comparação com Deskreen
+
+Registrar versão/commit do Deskreen, CPU, GPU/driver, RAM, versão Chrome/Android, resolução, FPS, codec e rede. Usar a mesma origem e conteúdo nas duas aplicações. Somar RSS de todos os processos do emissor, coletar CPU e GPU, repetir os testes de vídeo estático e movimento. Gravar um contador nas duas telas com câmera de alta velocidade, medir diferenças e reportar mediana e p95. A estatística WebRTC não substitui essa medição.
+
+Metas ainda NÃO comprovadas: RAM total pelo menos 25% menor; atraso mediano pelo menos 20% menor; CPU média sem aumento em configuração equivalente.
+
+## Limitações conhecidas para revisar no teste real
+
+- Monitores X11 com coordenadas negativas não são listados nesta implementação.
+- Janelas minimizadas não são oferecidas como fonte.
+- Preferência por H.264 ainda precisa validar perfil negociado e latência específica de cada encoder.
+- A adaptação por perda/jitter é uma heurística inicial; testar comportamento com congestionamento.
+- O serviço escuta todas as interfaces IPv4; selecionar uma interface altera o QR, não o endereço de escuta. O token e a aprovação controlam o acesso, mas o firewall deve restringir a rede desejada.
+
+## Decisões confirmadas durante implementação
+
+Capturas são pipelines independentes ligados ao transmissor por appsink/appsrc, com quadros nativos e filas limitadas. A nova captura produz um quadro antes da substituição e o pipeline WebRTC permanece o mesmo. O uso inicial de input-selector foi substituído após encontrar bloqueios em troca dinâmica. XInitThreads é chamado antes de GTK e de qualquer captura para habilitar os locks globais de Xlib.
+
+A integração é ignorada por padrão porque requer X11 acessível. Executar explicitamente com `cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored` no computador alvo. O tempo registrado do teste não é uma medição de latência de vídeo.
+
+## Artefato e teste de inicialização
+
+- Pacote `dist/telaleve_0.1.0-preview1_amd64.deb` gerado com binário release otimizado, aproximadamente 2,1 MB. Esse tamanho é apenas o arquivo do pacote; as dependências de runtime são instaladas separadamente.
+- Metadados Debian conferidos com `dpkg-deb --info`; verificação `ldd` não encontrou bibliotecas ausentes no ambiente disponível.
+- Aplicativo nativo iniciado temporariamente e encerrado após o teste: página do visualizador servida por HTTP e WebSocket com token inválido recusado. Não iniciou uma transmissão de usuário.
+- Instalação em sistema limpo, aprovação pelo desktop em conjunto com Android, codecs por hardware, sessão de 30 minutos e benchmark contra Deskreen continuam pendentes.
+
+## AppImage
+
+AppImage otimizado para Debian 13 amd64/X11 gerado com dependências de mídia e WebKitGTK. Abertura em modo de extração, serviço HTTP e recusa de WebSocket não autorizado passaram. Os seis testes nativos também passaram usando somente os plugins empacotados, sem caminhos de plugins do sistema. Detalhes em APPIMAGE.md. Compatibilidade em sistema limpo e Android continua pendente.
+

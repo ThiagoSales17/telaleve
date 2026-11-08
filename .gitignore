@@ -1,0 +1,11 @@
+node_modules/
+**/target/
+src-tauri/gen/
+dist/
+build/
+*.AppImage
+*.deb
+__pycache__/
+.env
+.env.*
+!.env.example
