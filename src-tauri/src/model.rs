@@ -17,6 +17,7 @@ pub enum Quality {
     #[default]
     Balanced,
     Sharp,
+    Smooth,
 }
 impl Quality {
     pub fn settings(self) -> (i32, i32, i32, u32, u32) {
@@ -24,6 +25,7 @@ impl Quality {
             Self::Economy => (1280, 720, 20, 1_500_000, 2_500_000),
             Self::Balanced => (1280, 720, 30, 2_500_000, 4_000_000),
             Self::Sharp => (1920, 1080, 30, 4_000_000, 6_000_000),
+            Self::Smooth => (1280, 720, 60, 4_000_000, 6_000_000),
         }
     }
 }

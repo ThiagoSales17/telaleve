@@ -317,7 +317,7 @@ mod integration {
             .unwrap();
         let offer="v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\nc=IN IP4 0.0.0.0\r\na=mid:0\r\na=recvonly\r\na=rtcp-mux\r\na=ice-ufrag:test\r\na=ice-pwd:testpassword012345678901\r\na=fingerprint:sha-256 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00\r\na=setup:actpass\r\na=rtpmap:96 VP8/90000\r\n";
         let (tx, mut rx) = broadcast::channel(128);
-        let mut media = Media::new(&source, Quality::Balanced, offer, tx).unwrap();
+        let mut media = Media::new(&source, Quality::Smooth, offer, tx).unwrap();
         let until = std::time::Instant::now() + Duration::from_secs(10);
         let mut answered = false;
         while std::time::Instant::now() < until {
@@ -341,7 +341,28 @@ mod integration {
             } else {
                 &source
             };
-            media.switch(chosen, Quality::Balanced).unwrap();
+            let quality = if i % 2 == 0 {
+                Quality::Smooth
+            } else {
+                Quality::Balanced
+            };
+            media.switch(chosen, quality).unwrap();
+            let sink = media
+                .source
+                .pipeline
+                .iterate_sinks()
+                .into_iter()
+                .next()
+                .unwrap()
+                .unwrap();
+            let caps = sink.static_pad("sink").unwrap().current_caps().unwrap();
+            assert_eq!(
+                caps.structure(0)
+                    .unwrap()
+                    .get::<gst::Fraction>("framerate")
+                    .unwrap(),
+                gst::Fraction::new(quality.settings().2, 1)
+            );
         }
         let mut invalid = source.clone();
         invalid.width = 0;

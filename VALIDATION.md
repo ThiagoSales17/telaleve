@@ -68,3 +68,7 @@ Cinco testes automatizados passaram (entrada/saída, saída externa, API ausente
 ## Ajuste 0.1.2 — vídeo sem botão sobreposto
 
 Removido o botão de saída do vídeo. Na tela cheia nativa, a saída fica a cargo do navegador/Voltar do Android. O modo expandido alternativo cria uma entrada temporária no histórico: Voltar restaura os controles sem sair do visualizador. Escape também restaura o modo alternativo. Seis testes frontend passaram, incluindo ausência do botão, saída nativa sem alterar histórico, saída por Voltar e restauração por Avançar. Não testado em Android físico.
+
+## 0.1.3 — modo Fluidez
+
+Adicionado 720p/60 FPS com bitrate inicial de 4 Mbps e máximo de 6 Mbps. Equilibrado permanece em 30 FPS por padrão. O teste nativo passou alternando vinte vezes entre monitor/janela e os perfis 30/60 FPS, conferindo as caps negociadas da captura em cada troca. Isso não comprova a taxa efetivamente exibida no Android. Seis testes Rust e os testes de tela cheia passaram. Android físico e comparação com Deskreen continuam pendentes.

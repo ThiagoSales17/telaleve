@@ -11,7 +11,7 @@ install -m755 "$binary" "$package_dir/usr/bin/telaleve"
 install -m644 src-tauri/icons/icon.png "$package_dir/usr/share/icons/hicolor/64x64/apps/telaleve.png"
 cat > "$package_dir/DEBIAN/control" <<'CONTROL'
 Package: telaleve
-Version: 0.1.2~preview1
+Version: 0.1.3~preview1
 Section: utils
 Priority: optional
 Architecture: amd64
@@ -31,4 +31,4 @@ Terminal=false
 Categories=Utility;Network;
 DESKTOP
 mkdir -p dist
-dpkg-deb --root-owner-group --build "$package_dir" dist/telaleve_0.1.2-preview1_amd64.deb
+dpkg-deb --root-owner-group --build "$package_dir" dist/telaleve_0.1.3-preview1_amd64.deb

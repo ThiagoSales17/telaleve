@@ -24,7 +24,7 @@ Computador e celular precisam estar na mesma rede, sem isolamento entre clientes
 sudo apt install ./src-tauri/target/release/bundle/deb/*.deb
 ```
 
-A entrega inclui um pacote otimizado inicial em `dist/telaleve_0.1.0-preview1_amd64.deb`, gerado por `scripts/package-binary.sh` a partir de `cargo build --release`. Para instalar esse pacote, use `sudo apt install ./dist/telaleve_0.1.0-preview1_amd64.deb`. O script acima permite gerar novamente o pacote pelo empacotador Tauri. A instalação em Debian limpo ainda precisa ser validada. O pacote declara plugins de vídeo, WebKitGTK e transporte ICE; encoders H.264 por hardware dependem de drivers e plugins opcionais instalados no computador.
+A entrega inclui um pacote otimizado inicial em `dist/telaleve_0.1.3-preview1_amd64.deb`, gerado por `scripts/package-binary.sh` a partir de `cargo build --release`. Para instalar esse pacote, use `sudo apt install ./dist/telaleve_0.1.3-preview1_amd64.deb`. O script acima permite gerar novamente o pacote pelo empacotador Tauri. A instalação em Debian limpo ainda precisa ser validada. O pacote declara plugins de vídeo, WebKitGTK e transporte ICE; encoders H.264 por hardware dependem de drivers e plugins opcionais instalados no computador.
 
 ## Código e testes
 
@@ -53,8 +53,19 @@ Com o emissor transmitindo, encontre o PID e execute `python3 scripts/measure.py
 
 ## AppImage
 
-Também disponível como `TelaLeve-0.1.0-x86_64.AppImage`, sem instalação via apt. Consulte [APPIMAGE.md](APPIMAGE.md) para execução, modo sem FUSE e validações.
+Também disponível como `TelaLeve-0.1.3-x86_64.AppImage`, sem instalação via apt. Consulte [APPIMAGE.md](APPIMAGE.md) para execução, modo sem FUSE e validações.
 
 ## GitHub
 
 Instaladores AppImage e Debian estão nas [Releases privadas](https://github.com/ThiagoSales17/telaleve/releases). É necessário entrar na conta com acesso ao repositório. Binários, caches e dependências não são versionados no Git. Consulte HISTORY.md para a organização retrospectiva dos commits.
+
+## Qualidade
+
+| Modo | Limite | FPS | Bitrate inicial / máximo |
+|---|---|---|---|
+| Econômico | 720p | 20 | 1,5 / 2,5 Mbps |
+| Equilibrado (padrão) | 720p | 30 | 2,5 / 4 Mbps |
+| Fluidez | 720p | 60 | 4 / 6 Mbps |
+| Nitidez | 1080p | 30 | 4 / 6 Mbps |
+
+Selecione Fluidez e clique em **Aplicar tela e qualidade** durante uma sessão, ou escolha antes de gerar o QR. 60 FPS é a configuração solicitada; a taxa entregue depende do computador, rede e receptor.
