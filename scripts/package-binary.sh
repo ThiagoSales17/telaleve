@@ -6,9 +6,9 @@ binary=${1:-src-tauri/target/release/telaleve}
 [ -x "$binary" ] || { printf 'Binário não encontrado: %s\n' "$binary" >&2; exit 1; }
 package_dir=$(mktemp -d)
 trap 'rm -rf "$package_dir"' EXIT HUP INT TERM
-mkdir -p "$package_dir/DEBIAN" "$package_dir/usr/bin" "$package_dir/usr/share/applications" "$package_dir/usr/share/icons/hicolor/64x64/apps"
+mkdir -p "$package_dir/DEBIAN" "$package_dir/usr/bin" "$package_dir/usr/share/applications" "$package_dir/usr/share/icons/hicolor/256x256/apps"
 install -m755 "$binary" "$package_dir/usr/bin/telaleve"
-install -m644 src-tauri/icons/icon.png "$package_dir/usr/share/icons/hicolor/64x64/apps/telaleve.png"
+install -m644 src-tauri/icons/icon.png "$package_dir/usr/share/icons/hicolor/256x256/apps/telaleve.png"
 cat > "$package_dir/DEBIAN/control" <<'CONTROL'
 Package: telaleve
 Version: 0.1.3~preview1

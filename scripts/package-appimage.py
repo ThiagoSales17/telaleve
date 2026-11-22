@@ -13,9 +13,9 @@ base=Path(__file__).resolve().parent.parent
 version=__import__('json').loads((base/'package.json').read_text())['version']
 app=args.appdir.resolve() if args.appdir else base/'build/TelaLeve.AppDir'
 app.parent.mkdir(exist_ok=True)
-for folder in ['usr/bin','usr/lib/gstreamer-1.0','usr/lib/webkit2gtk-4.1/injected-bundle','usr/share/applications','usr/share/icons/hicolor/64x64/apps','usr/share/glib-2.0/schemas']:(app/folder).mkdir(parents=True,exist_ok=True)
+for folder in ['usr/bin','usr/lib/gstreamer-1.0','usr/lib/webkit2gtk-4.1/injected-bundle','usr/share/applications','usr/share/icons/hicolor/256x256/apps','usr/share/glib-2.0/schemas']:(app/folder).mkdir(parents=True,exist_ok=True)
 shutil.copy2(args.binary.resolve(),app/'usr/bin/telaleve')
-shutil.copy2(base/'src-tauri/icons/icon.png',app/'usr/share/icons/hicolor/64x64/apps/telaleve.png')
+shutil.copy2(base/'src-tauri/icons/icon.png',app/'usr/share/icons/hicolor/256x256/apps/telaleve.png')
 (app/'usr/share/applications/telaleve.desktop').write_text('[Desktop Entry]\nType=Application\nName=TelaLeve\nExec=telaleve\nIcon=telaleve\nTerminal=false\nCategories=Utility;Network;\n')
 for name in ['app','coreelements','ximagesrc','videoconvertscale','videobox','vpx','rtp','rtpmanager','webrtc','dtls','srtp','sctp','udp','tcp','videoparsersbad','videotestsrc']:
  shutil.copy2(Path('/usr/lib/x86_64-linux-gnu/gstreamer-1.0')/f'libgst{name}.so',app/'usr/lib/gstreamer-1.0')
@@ -36,7 +36,7 @@ export GSETTINGS_SCHEMA_DIR="$TELALEVE_APPDIR/usr/share/glib-2.0/schemas"
 export XDG_DATA_DIRS="$TELALEVE_APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 exec "$TELALEVE_APPDIR/usr/bin/telaleve" "$@"
 ''');(app/'AppRun').chmod(0o755)
-cmd=[str(args.linuxdeploy.resolve()),'--appdir',str(app),'--deploy-deps-only',str(app/'usr'),'--desktop-file',str(app/'usr/share/applications/telaleve.desktop'),'--icon-file',str(app/'usr/share/icons/hicolor/64x64/apps/telaleve.png')]
+cmd=[str(args.linuxdeploy.resolve()),'--appdir',str(app),'--deploy-deps-only',str(app/'usr'),'--desktop-file',str(app/'usr/share/applications/telaleve.desktop'),'--icon-file',str(app/'usr/share/icons/hicolor/256x256/apps/telaleve.png')]
 with open(app.parent/'linuxdeploy.log','w')as log:subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,check=True)
 
 for name in ['gstreamer1.0-plugins-base','gstreamer1.0-plugins-good','gstreamer1.0-plugins-bad','gstreamer1.0-x','gstreamer1.0-nice']:
