@@ -2,6 +2,8 @@
 mod capture;
 mod media;
 mod model;
+mod platform;
+mod portal;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -34,10 +36,35 @@ struct App {
     url: String,
     bitrate: u32,
     server_ready: bool,
+    revision: u64,
 }
 impl App {
+    fn new(tx: broadcast::Sender<String>) -> Self {
+        Self {
+            access: None,
+            source: None,
+            quality: Quality::Balanced,
+            media: None,
+            offer: None,
+            ice: Vec::new(),
+            approved: false,
+            status: "encerrado".into(),
+            tx,
+            url: String::new(),
+            bitrate: 2_500_000,
+            server_ready: false,
+            revision: 0,
+        }
+    }
+    fn may_stream(&self, revision: u64) -> bool {
+        self.revision == revision
+            && self.approved
+            && self.access.as_ref().is_some_and(|access| access.connected)
+    }
     fn stop(&mut self) {
+        self.revision = self.revision.wrapping_add(1);
         self.media = None;
+        self.source = None;
         self.access = None;
         self.approved = false;
         self.offer = None;
@@ -45,26 +72,92 @@ impl App {
         self.status = "encerrado".into();
         let _ = self.tx.send(json!({"type":"ended"}).to_string());
     }
-    fn start_media(&mut self) -> Result<(), String> {
-        let offer = self.offer.as_ref().ok_or("Aguardando oferta do celular")?;
-        self.media = None;
-        let m = media::Media::new(
-            self.source.as_ref().ok_or("Escolha uma origem")?,
-            self.quality,
-            offer,
-            self.tx.clone(),
-        )?;
-        for (i, c) in self.ice.drain(..) {
-            m.ice(i, &c)
+}
+
+async fn start_media(state: &Shared) -> Result<(), String> {
+    let (source, quality, offer, tx, revision) = {
+        let mut app = state
+            .lock()
+            .map_err(|_| "Estado do aplicativo indisponível")?;
+        if !app.approved {
+            return Err("A conexão ainda não foi aprovada".into());
         }
-        self.media = Some(m);
-        self.status = "conectando".into();
-        Ok(())
+        let source = app.source.clone().ok_or("Escolha uma origem")?;
+        let offer = app.offer.clone().ok_or("Aguardando oferta do celular")?;
+        app.media = None;
+        app.revision = app.revision.wrapping_add(1);
+        (source, app.quality, offer, app.tx.clone(), app.revision)
+    };
+    let remote = portal::open_remote(&source).await?;
+    if !state
+        .lock()
+        .map_err(|_| "Estado do aplicativo indisponível")?
+        .may_stream(revision)
+    {
+        return Ok(());
     }
+    let media = tauri::async_runtime::spawn_blocking(move || {
+        media::Media::new(&source, quality, &offer, tx, remote)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+    let mut app = state
+        .lock()
+        .map_err(|_| "Estado do aplicativo indisponível")?;
+    if !app.may_stream(revision) {
+        // Ending, switching or disconnecting cancels preparation without touching the new session.
+        return Ok(());
+    }
+    for (i, candidate) in app.ice.drain(..) {
+        media.ice(i, &candidate);
+    }
+    app.media = Some(media);
+    app.status = "conectando".into();
+    Ok(())
+}
+
+async fn resolve_source(
+    id: &str,
+    current: Option<Source>,
+    reselect: bool,
+) -> Result<Source, String> {
+    if platform::uses_portal() && id == "portal" {
+        if !reselect {
+            if let Some(source) = current.filter(|source| source.pipewire.is_some()) {
+                return Ok(source);
+            }
+        }
+        return portal::select().await;
+    }
+    capture::sources()?
+        .into_iter()
+        .find(|source| source.id == id)
+        .ok_or("Origem indisponível".into())
+}
+
+#[tauri::command]
+fn list_sources(state: tauri::State<Shared>) -> Result<Vec<Source>, String> {
+    if platform::uses_portal() {
+        let app = state
+            .lock()
+            .map_err(|_| "Estado do aplicativo indisponível")?;
+        if let Some(source) = app
+            .source
+            .as_ref()
+            .filter(|source| source.pipewire.is_some())
+        {
+            return Ok(vec![source.clone()]);
+        }
+    }
+    capture::sources()
 }
 #[tauri::command]
-fn list_sources() -> Result<Vec<Source>, String> {
-    capture::sources()
+fn capture_backend() -> &'static str {
+    if platform::uses_portal() {
+        "portal"
+    } else {
+        "x11"
+    }
 }
 #[tauri::command]
 fn networks() -> Vec<Value> {
@@ -80,8 +173,8 @@ fn networks() -> Vec<Value> {
         .collect()
 }
 #[tauri::command]
-fn begin(
-    state: tauri::State<Shared>,
+async fn begin(
+    state: tauri::State<'_, Shared>,
     source: String,
     ip: String,
     quality: Quality,
@@ -90,11 +183,19 @@ fn begin(
     if !networks().iter().any(|n| n["ip"] == ip.to_string()) {
         return Err("Selecione uma interface local".into());
     }
-    let s = capture::sources()?
-        .into_iter()
-        .find(|s| s.id == source)
-        .ok_or("Origem indisponível")?;
-    let mut a = state.lock().unwrap();
+    let (current, revision) = {
+        let app = state
+            .lock()
+            .map_err(|_| "Estado do aplicativo indisponível")?;
+        (app.source.clone(), app.revision)
+    };
+    let s = resolve_source(&source, current, false).await?;
+    let mut a = state
+        .lock()
+        .map_err(|_| "Estado do aplicativo indisponível")?;
+    if a.revision != revision {
+        return Err("A sessão mudou; tente novamente".into());
+    }
     if !a.server_ready {
         return Err("O servidor local não está disponível; confira a porta 9876".into());
     }
@@ -113,23 +214,41 @@ fn begin(
     Ok(json!({"url":a.url,"qr":code}))
 }
 #[tauri::command]
-fn approve(state: tauri::State<Shared>, allow: bool) -> Result<(), String> {
-    let mut a = state.lock().unwrap();
-    if !allow {
-        a.stop();
-        return Ok(());
-    }
-    if a.status != "solicitando_aprovacao" {
-        return Err("Não há solicitação pendente".into());
-    }
-    a.approved = true;
-    let resume = uuid::Uuid::new_v4().to_string();
-    a.access.as_mut().ok_or("Sessão encerrada")?.resume = Some(resume.clone());
-    let _ =
-        a.tx.send(json!({"type":"approved","resume":resume}).to_string());
-    if let Err(e) = a.start_media() {
-        a.stop();
-        return Err(e);
+async fn approve(state: tauri::State<'_, Shared>, allow: bool) -> Result<(), String> {
+    let shared = state.inner().clone();
+    let generation = {
+        let mut app = shared
+            .lock()
+            .map_err(|_| "Estado do aplicativo indisponível")?;
+        if !allow {
+            app.stop();
+            return Ok(());
+        }
+        if app.status != "solicitando_aprovacao" {
+            return Err("Não há solicitação pendente".into());
+        }
+        let resume = uuid::Uuid::new_v4().to_string();
+        let access = app.access.as_mut().ok_or("Sessão encerrada")?;
+        access.resume = Some(resume.clone());
+        let generation = access.token.clone();
+        app.approved = true;
+        let _ = app
+            .tx
+            .send(json!({"type":"approved","resume":resume}).to_string());
+        generation
+    };
+    if let Err(error) = start_media(&shared).await {
+        let mut app = shared
+            .lock()
+            .map_err(|_| "Estado do aplicativo indisponível")?;
+        if app
+            .access
+            .as_ref()
+            .is_some_and(|access| access.token == generation)
+        {
+            app.stop();
+        }
+        return Err(error);
     }
     Ok(())
 }
@@ -138,20 +257,31 @@ fn end(state: tauri::State<Shared>) {
     state.lock().unwrap().stop()
 }
 #[tauri::command]
-fn change_source(
-    state: tauri::State<Shared>,
+async fn change_source(
+    state: tauri::State<'_, Shared>,
     source: String,
     quality: Quality,
+    reselect: Option<bool>,
 ) -> Result<(), String> {
-    let s = capture::sources()?
-        .into_iter()
-        .find(|s| s.id == source)
-        .ok_or("Origem indisponível")?;
-    let mut a = state.lock().unwrap();
+    let (current, revision) = {
+        let app = state
+            .lock()
+            .map_err(|_| "Estado do aplicativo indisponível")?;
+        (app.source.clone(), app.revision)
+    };
+    let s = resolve_source(&source, current, reselect.unwrap_or(false)).await?;
+    let remote = portal::open_remote(&s).await?;
+    let mut a = state
+        .lock()
+        .map_err(|_| "Estado do aplicativo indisponível")?;
+    if a.revision != revision {
+        return Err("A sessão mudou; tente novamente".into());
+    }
     if let Some(m) = a.media.as_mut() {
-        m.switch(&s, quality)?;
+        m.switch(&s, quality, remote)?;
         m.bitrate(quality.settings().3);
     }
+    a.revision = a.revision.wrapping_add(1);
     a.source = Some(s);
     a.quality = quality;
     a.bitrate = quality.settings().3;
@@ -221,16 +351,56 @@ async fn socket(mut socket: WebSocket, a: Shared) {
     let mut seen = Instant::now();
     loop {
         tokio::select! {
-        _=heartbeat.tick()=>{if seen.elapsed().as_secs()>15{break}if sink.send(Message::Ping(Vec::new().into())).await.is_err(){break}},
+        _=heartbeat.tick()=>{if seen.elapsed().as_secs()>15 || sink.send(Message::Ping(Vec::new().into())).await.is_err(){break}},
         event=rx.recv()=>{match event{Ok(text)=>{let ended=text.contains("\"ended\"");if sink.send(Message::Text(text.into())).await.is_err()||ended{break}},Err(_)=>break}},
-        msg=stream.next()=>{let text=match msg{Some(Ok(Message::Text(text)))=>text,Some(Ok(Message::Pong(_)))=>{seen=Instant::now();continue},_=>break};seen=Instant::now();let Ok(v)=serde_json::from_str::<Value>(&text)else{continue};let mut app=a.lock().unwrap();if app.access.as_ref().map(|x|x.token.clone()) != generation {break}
-        match v["type"].as_str().unwrap_or(""){
-        "offer"=>{if let Some(sdp)=v["sdp"].as_str(){app.offer=Some(sdp.into());if app.approved{if let Err(e)=app.start_media(){let _=app.tx.send(json!({"type":"error","message":e}).to_string());}}else{app.status="solicitando_aprovacao".into();let _=app.tx.send(json!({"type":"waiting"}).to_string());}}},
-        "ice"=>{if let(Some(c),Some(i))=(v["candidate"].as_str(),v["sdpMLineIndex"].as_u64()){if let Some(m)=app.media.as_ref(){m.ice(i as u32,c)}else if app.ice.len()<128{app.ice.push((i as u32,c.into()));}}},
-        "connected"=>if app.approved{app.status="transmitindo".into()},
-        "feedback"=>if app.approved{let loss=v["loss"].as_f64().unwrap_or(0.0);let jitter=v["jitter"].as_f64().unwrap_or(0.0);let max=app.quality.settings().4;let b=if loss>0.03||jitter>0.08{(app.bitrate as f64*0.8)as u32}else{app.bitrate.saturating_add(100_000)}.clamp(400_000,max);app.bitrate=b;if let Some(m)=app.media.as_mut(){m.bitrate(b)}},
-        _=>{}
-        }
+        msg=stream.next()=>{
+            let text=match msg{Some(Ok(Message::Text(text)))=>text,Some(Ok(Message::Pong(_)))=>{seen=Instant::now();continue},_=>break};
+            seen=Instant::now();
+            let Ok(v)=serde_json::from_str::<Value>(&text)else{continue};
+            let should_start = {
+                let mut app=a.lock().unwrap();
+                if app.access.as_ref().map(|x|x.token.clone()) != generation {break}
+                match v["type"].as_str().unwrap_or("") {
+                    "offer" => {
+                        if let Some(sdp) = v["sdp"].as_str() {
+                            app.offer = Some(sdp.into());
+                            if app.approved { true } else {
+                                app.status = "solicitando_aprovacao".into();
+                                let _ = app.tx.send(json!({"type":"waiting"}).to_string());
+                                false
+                            }
+                        } else { false }
+                    }
+                    "ice" => {
+                        if let (Some(c), Some(i)) = (v["candidate"].as_str(), v["sdpMLineIndex"].as_u64()) {
+                            if let Some(m) = app.media.as_ref() { m.ice(i as u32, c); }
+                            else if app.ice.len() < 128 { app.ice.push((i as u32, c.into())); }
+                        }
+                        false
+                    }
+                    "connected" => { if app.approved { app.status="transmitindo".into(); } false }
+                    "feedback" => {
+                        if app.approved {
+                            let loss=v["loss"].as_f64().unwrap_or(0.0);
+                            let jitter=v["jitter"].as_f64().unwrap_or(0.0);
+                            let max=app.quality.settings().4;
+                            let b=if loss>0.03||jitter>0.08{(app.bitrate as f64*0.8)as u32}else{app.bitrate.saturating_add(100_000)}.clamp(400_000,max);
+                            app.bitrate=b;
+                            if let Some(m)=app.media.as_mut(){m.bitrate(b)}
+                        }
+                        false
+                    }
+                    _ => false,
+                }
+            };
+            if should_start {
+                if let Err(error) = start_media(&a).await {
+                    let app = a.lock().unwrap();
+                    if app.access.as_ref().map(|x| x.token.clone()) == generation {
+                        let _ = app.tx.send(json!({"type":"error","message":error}).to_string());
+                    }
+                }
+            }
         }
         }
     }
@@ -238,6 +408,7 @@ async fn socket(mut socket: WebSocket, a: Shared) {
     if app.access.as_ref().map(|x| x.token.clone()) != generation {
         return;
     }
+    app.revision = app.revision.wrapping_add(1);
     if let Some(access) = app.access.as_mut() {
         access.connected = false;
         access.disconnected = Some(Instant::now());
@@ -252,29 +423,18 @@ async fn socket(mut socket: WebSocket, a: Shared) {
     }
 }
 fn main() {
-    if let Err(e) = capture::init_xlib() {
-        eprintln!("{e}");
-        return;
+    if !platform::uses_portal() {
+        if let Err(e) = capture::init_xlib() {
+            eprintln!("{e}");
+            return;
+        }
     }
     if let Err(e) = gstreamer::init() {
         eprintln!("GStreamer indisponível: {e}");
         return;
     }
     let (tx, _) = broadcast::channel(128);
-    let app: Shared = Arc::new(Mutex::new(App {
-        access: None,
-        source: None,
-        quality: Quality::Balanced,
-        media: None,
-        offer: None,
-        ice: Vec::new(),
-        approved: false,
-        status: "encerrado".into(),
-        tx,
-        url: String::new(),
-        bitrate: 2_500_000,
-        server_ready: false,
-    }));
+    let app: Shared = Arc::new(Mutex::new(App::new(tx)));
     let server = app.clone();
     let monitor = app.clone();
     tauri::Builder::default()
@@ -345,18 +505,27 @@ fn main() {
                     continue;
                 }
                 if a.media.is_some() {
-                    let lost = match (&sources, &a.source) {
-                        (Ok(all), Some(s)) => !all.iter().any(|n| {
-                            n.id == s.id
-                                && n.width == s.width
-                                && n.height == s.height
-                                && n.x == s.x
-                                && n.y == s.y
-                        }),
-                        _ => true,
+                    let lost = if a
+                        .source
+                        .as_ref()
+                        .is_some_and(|source| source.pipewire.is_some())
+                    {
+                        false
+                    } else {
+                        match (&sources, &a.source) {
+                            (Ok(all), Some(s)) => !all.iter().any(|n| {
+                                n.id == s.id
+                                    && n.width == s.width
+                                    && n.height == s.height
+                                    && n.x == s.x
+                                    && n.y == s.y
+                            }),
+                            _ => true,
+                        }
                     };
                     let err = a.media.as_ref().and_then(|m| m.error());
                     if lost || err.is_some() {
+                        a.revision = a.revision.wrapping_add(1);
                         a.media = None;
                         a.status = "origem_perdida".into();
                         let _ = a.tx.send(json!({"type":"source_lost"}).to_string());
@@ -367,6 +536,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             list_sources,
+            capture_backend,
             networks,
             begin,
             approve,
@@ -376,4 +546,82 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("Falha ao abrir TelaLeve");
+}
+
+#[cfg(test)]
+mod streaming_access_tests {
+    use super::*;
+    use crate::model::{PipeWireRemote, PipeWireSource};
+    use std::{
+        future::Future,
+        os::fd::OwnedFd,
+        pin::Pin,
+        sync::atomic::{AtomicUsize, Ordering},
+    };
+    use tokio::sync::Notify;
+
+    #[derive(Debug, Default)]
+    struct PendingRemote {
+        opens: AtomicUsize,
+        entered: Notify,
+        resume: Notify,
+    }
+    impl PipeWireRemote for PendingRemote {
+        fn open(&self) -> Pin<Box<dyn Future<Output = Result<OwnedFd, String>> + Send + '_>> {
+            Box::pin(async move {
+                self.opens.fetch_add(1, Ordering::SeqCst);
+                self.entered.notify_one();
+                self.resume.notified().await;
+                std::fs::File::open("/dev/null")
+                    .map(OwnedFd::from)
+                    .map_err(|error| error.to_string())
+            })
+        }
+    }
+    fn prepared_state(remote: Arc<PendingRemote>) -> Shared {
+        let (tx, _) = broadcast::channel(8);
+        let mut app = App::new(tx);
+        app.source = Some(Source {
+            id: "portal".into(),
+            name: "Teste isolado".into(),
+            xid: 0,
+            x: 0,
+            y: 0,
+            width: 640,
+            height: 480,
+            pipewire: Some(PipeWireSource { node_id: 1, remote }),
+        });
+        let mut access = Access::new();
+        access.connected = true;
+        app.access = Some(access);
+        app.offer = Some("Oferta de teste".into());
+        Arc::new(Mutex::new(app))
+    }
+    #[tokio::test]
+    async fn unapproved_receiver_cannot_open_a_capture() {
+        let remote = Arc::new(PendingRemote::default());
+        let state = prepared_state(remote.clone());
+        assert!(start_media(&state).await.is_err());
+        assert_eq!(remote.opens.load(Ordering::SeqCst), 0);
+        assert!(state.lock().unwrap().media.is_none());
+    }
+    #[tokio::test]
+    async fn ending_during_portal_connection_cancels_capture_preparation() {
+        let remote = Arc::new(PendingRemote::default());
+        let state = prepared_state(remote.clone());
+        state.lock().unwrap().approved = true;
+        let task_state = state.clone();
+        let task = tokio::spawn(async move { start_media(&task_state).await });
+        tokio::time::timeout(std::time::Duration::from_secs(2), remote.entered.notified())
+            .await
+            .unwrap();
+        state.lock().unwrap().stop();
+        remote.resume.notify_one();
+        assert!(task.await.unwrap().is_ok());
+        let app = state.lock().unwrap();
+        assert!(app.media.is_none());
+        assert!(app.source.is_none());
+        assert!(app.access.is_none());
+        assert_eq!(app.status, "encerrado");
+    }
 }

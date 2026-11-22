@@ -3,7 +3,11 @@ use gst::prelude::*;
 use gstreamer as gst;
 use gstreamer_webrtc as rtc;
 use serde_json::json;
-use std::{sync::mpsc, time::Duration};
+use std::{
+    os::fd::{AsRawFd, OwnedFd},
+    sync::mpsc,
+    time::Duration,
+};
 use tokio::sync::broadcast;
 pub struct Media {
     pipeline: gst::Pipeline,
@@ -12,7 +16,18 @@ pub struct Media {
     source: SourceStream,
     pub codec: String,
 }
-fn capture(s: &Source, q: Quality) -> Result<gst::Bin, String> {
+fn capture(s: &Source, q: Quality, remote: Option<&OwnedFd>) -> Result<gst::Bin, String> {
+    if let Some(pipewire) = &s.pipewire {
+        let fd = remote.ok_or("Conexão PipeWire indisponível")?.as_raw_fd();
+        let desc = format!(
+            "pipewiresrc fd={fd} path={} do-timestamp=true ! {}",
+            pipewire.node_id,
+            normalize_portal(q)
+        );
+        let bin = gst::parse::bin_from_description(&desc, true).map_err(|e| e.to_string())?;
+        configure_portal_scaling(&bin, q)?;
+        return Ok(bin);
+    }
     if s.width < 2 || s.height < 2 {
         return Err("A origem tem dimensões inválidas".into());
     }
@@ -31,6 +46,51 @@ fn capture(s: &Source, q: Quality) -> Result<gst::Bin, String> {
     };
     let desc=format!("ximagesrc {location} use-damage=false show-pointer=true ! video/x-raw,framerate={f}/1 ! videoconvert ! videoscale ! video/x-raw,width={sw},height={sh},pixel-aspect-ratio=1/1 ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity");
     gst::parse::bin_from_description(&desc, true).map_err(|e| e.to_string())
+}
+// The caps probe uses physical frame dimensions rather than portal logical coordinates.
+fn normalize_portal(q: Quality) -> String {
+    let (w, h, f, _, _) = q.settings();
+    format!("videoconvert ! videorate ! video/x-raw,framerate={f}/1 ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
+}
+fn configure_portal_scaling(bin: &gst::Bin, quality: Quality) -> Result<(), String> {
+    let scale = bin
+        .by_name("portal-scale")
+        .ok_or("Conversor de escala indisponível")?;
+    let filter = bin
+        .by_name("portal-size")
+        .ok_or("Filtro de resolução indisponível")?;
+    let pad = scale
+        .static_pad("sink")
+        .ok_or("Entrada do conversor indisponível")?;
+    let (mw, mh, _, _, _) = quality.settings();
+    pad.add_probe(gst::PadProbeType::EVENT_DOWNSTREAM, move |_, info| {
+        if let Some(gst::PadProbeData::Event(event)) = info.data.as_ref() {
+            if let gst::EventView::Caps(event) = event.view() {
+                if let Some(caps) = event.caps().structure(0) {
+                    if let (Ok(width), Ok(height)) =
+                        (caps.get::<i32>("width"), caps.get::<i32>("height"))
+                    {
+                        if width > 0 && height > 0 {
+                            let (width, height) =
+                                fit(width as u32, height as u32, mw as u32, mh as u32);
+                            let next = gst::Caps::builder("video/x-raw")
+                                .field("width", width as i32)
+                                .field("height", height as i32)
+                                .field("pixel-aspect-ratio", gst::Fraction::new(1, 1))
+                                .build();
+                            if filter.property::<Option<gst::Caps>>("caps").as_ref() != Some(&next)
+                            {
+                                filter.set_property("caps", &next);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        gst::PadProbeReturn::Ok
+    })
+    .ok_or("Não foi possível configurar a escala da captura")?;
+    Ok(())
 }
 fn fit(w: u32, h: u32, mw: u32, mh: u32) -> (u32, u32) {
     let scale = (mw as f64 / w as f64).min(mh as f64 / h as f64).min(1.0);
@@ -78,15 +138,22 @@ fn hardware() -> Option<&'static str> {
 struct SourceStream {
     pipeline: gst::Pipeline,
     active: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    _remote: Option<OwnedFd>,
+    _origin: Source,
 }
 impl SourceStream {
-    fn prepare(s: &Source, q: Quality, frames: &gst::Element) -> Result<Self, String> {
+    fn prepare(
+        s: &Source,
+        q: Quality,
+        frames: &gst::Element,
+        remote: Option<OwnedFd>,
+    ) -> Result<Self, String> {
         use std::sync::{
             atomic::{AtomicBool, Ordering},
             Arc,
         };
         let pipeline = gst::Pipeline::new();
-        let bin = capture(s, q)?;
+        let bin = capture(s, q, remote.as_ref())?;
         let sink = gst::ElementFactory::make("appsink")
             .property("emit-signals", true)
             .property("sync", false)
@@ -119,7 +186,12 @@ impl SourceStream {
             }
             Some(gst::FlowReturn::Ok.to_value())
         });
-        let stream = Self { pipeline, active };
+        let stream = Self {
+            pipeline,
+            active,
+            _remote: remote,
+            _origin: s.clone(),
+        };
         stream
             .pipeline
             .set_state(gst::State::Playing)
@@ -149,6 +221,7 @@ impl Media {
         q: Quality,
         offer: &str,
         tx: broadcast::Sender<String>,
+        remote: Option<OwnedFd>,
     ) -> Result<Self, String> {
         let (_, _, _, bitrate, _) = q.settings();
         let hw = if payload(offer, "H264").is_some() {
@@ -180,7 +253,7 @@ impl Media {
         }
         let peer = pipeline.by_name("peer").unwrap();
         let frames = pipeline.by_name("frames").unwrap();
-        let source = SourceStream::prepare(s, q, &frames)?;
+        let source = SourceStream::prepare(s, q, &frames, remote)?;
         let ice_tx = tx.clone();
         peer.connect("on-ice-candidate", false, move |args| {
             let m = args[1].get::<u32>().unwrap();
@@ -256,8 +329,13 @@ impl Media {
             e.set_property("bitrate", b / 1000);
         }
     }
-    pub fn switch(&mut self, s: &Source, q: Quality) -> Result<(), String> {
-        let next = SourceStream::prepare(s, q, &self.frames)?;
+    pub fn switch(
+        &mut self,
+        s: &Source,
+        q: Quality,
+        remote: Option<OwnedFd>,
+    ) -> Result<(), String> {
+        let next = SourceStream::prepare(s, q, &self.frames, remote)?;
         self.source.deactivate();
         let old = std::mem::replace(&mut self.source, next);
         drop(old);
@@ -297,6 +375,31 @@ mod tests {
         assert_eq!(fit(1920, 1080, 1280, 720), (1280, 720));
     }
     #[test]
+    fn portal_conversion_centers_small_frames_without_upscaling() {
+        gst::init().unwrap();
+        let desc = format!("videotestsrc num-buffers=1 pattern=white ! video/x-raw,format=RGB,width=320,height=240,framerate=30/1 ! {} ! video/x-raw,format=RGB ! appsink name=sample sync=false", normalize_portal(Quality::Balanced));
+        let pipeline = gst::parse::launch(&desc)
+            .unwrap()
+            .downcast::<gst::Pipeline>()
+            .unwrap();
+        configure_portal_scaling(pipeline.upcast_ref(), Quality::Balanced).unwrap();
+        pipeline.set_state(gst::State::Playing).unwrap();
+        let sink = pipeline.by_name("sample").unwrap();
+        let sample =
+            sink.emit_by_name::<Option<gst::Sample>>("try-pull-sample", &[&3_000_000_000u64]);
+        pipeline.set_state(gst::State::Null).unwrap();
+        let sample = sample.expect("A conversão não produziu um quadro");
+        let caps = sample.caps().unwrap().structure(0).unwrap();
+        assert_eq!(caps.get::<i32>("width").unwrap(), 1280);
+        assert_eq!(caps.get::<i32>("height").unwrap(), 720);
+        let buffer = sample.buffer().unwrap().map_readable().unwrap();
+        assert!(buffer.as_slice()[(360 * 1280 + 640) * 3] > 250);
+        assert!(
+            buffer.as_slice()[(360 * 1280 + 400) * 3] < 5,
+            "Uma entrada pequena foi ampliada"
+        );
+    }
+    #[test]
     fn codec() {
         assert_eq!(payload("a=rtpmap:102 H264/90000\r\n", "H264"), Some(102));
     }
@@ -317,7 +420,7 @@ mod integration {
             .unwrap();
         let offer="v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\nc=IN IP4 0.0.0.0\r\na=mid:0\r\na=recvonly\r\na=rtcp-mux\r\na=ice-ufrag:test\r\na=ice-pwd:testpassword012345678901\r\na=fingerprint:sha-256 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00\r\na=setup:actpass\r\na=rtpmap:96 VP8/90000\r\n";
         let (tx, mut rx) = broadcast::channel(128);
-        let mut media = Media::new(&source, Quality::Smooth, offer, tx).unwrap();
+        let mut media = Media::new(&source, Quality::Smooth, offer, tx, None).unwrap();
         let until = std::time::Instant::now() + Duration::from_secs(10);
         let mut answered = false;
         while std::time::Instant::now() < until {
@@ -346,7 +449,7 @@ mod integration {
             } else {
                 Quality::Balanced
             };
-            media.switch(chosen, quality).unwrap();
+            media.switch(chosen, quality, None).unwrap();
             let sink = media
                 .source
                 .pipeline
@@ -366,7 +469,7 @@ mod integration {
         }
         let mut invalid = source.clone();
         invalid.width = 0;
-        assert!(media.switch(&invalid, Quality::Balanced).is_err());
+        assert!(media.switch(&invalid, Quality::Balanced, None).is_err());
         assert!(media
             .source
             .active

@@ -4,7 +4,7 @@ extern "C" {
 }
 pub fn init_xlib() -> Result<(), String> {
     static READY: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
-    // Xlib must initialize its global locks before GTK or capture threads open a display.
+    // SAFETY: OnceLock calls XInitThreads once, before GTK or any capture opens Xlib.
     if *READY.get_or_init(|| unsafe { XInitThreads() != 0 }) {
         Ok(())
     } else {
@@ -17,15 +17,26 @@ use x11rb::{
     protocol::{randr::ConnectionExt as _, xproto::*},
 };
 pub fn sources() -> Result<Vec<Source>, String> {
+    if crate::platform::uses_portal() {
+        return Ok(vec![Source {
+            id: "portal".into(),
+            name: "Escolher tela ou janela pelo sistema".into(),
+            xid: 0,
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            pipewire: None,
+        }]);
+    }
     let (c, n) = x11rb::connect(None).map_err(|e| e.to_string())?;
     let root = c.setup().roots[n].root;
     let mut out = Vec::new();
     let monitors = c
         .randr_get_monitors(root, true)
-        .map_err(|e| e.to_string())?
-        .reply()
-        .map_err(|e| e.to_string())?;
-    for m in monitors.monitors {
+        .ok()
+        .and_then(|request| request.reply().ok());
+    for m in monitors.into_iter().flat_map(|reply| reply.monitors) {
         if m.x < 0 || m.y < 0 {
             continue;
         }
@@ -42,6 +53,20 @@ pub fn sources() -> Result<Vec<Source>, String> {
             y: m.y as u32,
             width: m.width as u32,
             height: m.height as u32,
+            pipewire: None,
+        });
+    }
+    if out.is_empty() {
+        let screen = &c.setup().roots[n];
+        out.push(Source {
+            id: format!("screen:{root}"),
+            name: "Desktop X11".into(),
+            xid: 0,
+            x: 0,
+            y: 0,
+            width: screen.width_in_pixels as u32,
+            height: screen.height_in_pixels as u32,
+            pipewire: None,
         });
     }
     let atom = |s: &[u8]| -> Result<u32, String> {
@@ -94,6 +119,7 @@ pub fn sources() -> Result<Vec<Source>, String> {
             y: 0,
             width: g.width as u32,
             height: g.height as u32,
+            pipewire: None,
         });
     }
     Ok(out)

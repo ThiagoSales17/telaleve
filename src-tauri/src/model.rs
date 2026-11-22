@@ -1,5 +1,22 @@
 use serde::{Deserialize, Serialize};
-use std::time::{Duration, Instant};
+use std::{
+    future::Future,
+    os::fd::OwnedFd,
+    pin::Pin,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+/// A portal session capable of opening an independent PipeWire connection.
+pub trait PipeWireRemote: std::fmt::Debug + Send + Sync {
+    fn open(&self) -> Pin<Box<dyn Future<Output = Result<OwnedFd, String>> + Send + '_>>;
+}
+
+#[derive(Clone, Debug)]
+pub struct PipeWireSource {
+    pub node_id: u32,
+    pub remote: Arc<dyn PipeWireRemote>,
+}
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Source {
     pub id: String,
@@ -9,6 +26,8 @@ pub struct Source {
     pub y: u32,
     pub width: u32,
     pub height: u32,
+    #[serde(skip)]
+    pub pipewire: Option<PipeWireSource>,
 }
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "snake_case")]
@@ -73,6 +92,34 @@ impl Access {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[derive(Debug)]
+    struct PrivateRemote;
+    impl PipeWireRemote for PrivateRemote {
+        fn open(&self) -> Pin<Box<dyn Future<Output = Result<OwnedFd, String>> + Send + '_>> {
+            Box::pin(async { Err("Não usado na serialização".into()) })
+        }
+    }
+    #[test]
+    fn source_serialization_does_not_expose_portal_access() {
+        let source = Source {
+            id: "portal".into(),
+            name: "Tela".into(),
+            xid: 0,
+            x: 0,
+            y: 0,
+            width: 1280,
+            height: 720,
+            pipewire: Some(PipeWireSource {
+                node_id: 42,
+                remote: Arc::new(PrivateRemote),
+            }),
+        };
+        let value = serde_json::to_value(&source).unwrap();
+        assert!(value.get("pipewire").is_none());
+        assert!(value.get("remote").is_none());
+        let restored: Source = serde_json::from_value(value).unwrap();
+        assert!(restored.pipewire.is_none());
+    }
     #[test]
     fn token_lifecycle() {
         let mut a = Access::new();

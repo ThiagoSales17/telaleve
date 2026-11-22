@@ -8,3 +8,7 @@ O projeto começou sem Git. Os commits foram organizados retrospectivamente por 
 - 0.1.3: modo Fluidez 720p/60 FPS; Equilibrado 30 FPS continua padrão.
 
 Os resultados de testes e limitações estão em VALIDATION.md. Não há medições comparativas com Deskreen nem validação em Android físico.
+
+## 0.2.0 — compatibilidade Linux
+
+Adicionados backend portal/PipeWire para Wayland, fallback de desktop X11 sem RandR, instalador de dependências por família de distribuição, diagnóstico com estado de falha e empacotador Flatpak para binários nativos x86_64/aarch64. CI cobre Ubuntu x86_64/ARM64; os resultados efetivos e limites permanecem em VALIDATION.md e LINUX.md.

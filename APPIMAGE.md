@@ -1,5 +1,7 @@
 # TelaLeve AppImage
 
+> Este documento registra o artefato histórico 0.1.3. Para a distribuição entre diferentes sistemas na versão 0.2.0, consulte [LINUX.md](LINUX.md). O empacotador manual de AppImage continua específico do Debian x86_64.
+
 Arquivo: `TelaLeve-0.1.0-x86_64.AppImage` (aproximadamente 103 MB).
 Alvo: Debian 13, x86_64/amd64, sessão X11. O tamanho inclui WebKitGTK e bibliotecas/plugins GStreamer; não representa o consumo de RAM.
 

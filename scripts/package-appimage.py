@@ -17,7 +17,7 @@ for folder in ['usr/bin','usr/lib/gstreamer-1.0','usr/lib/webkit2gtk-4.1/injecte
 shutil.copy2(args.binary.resolve(),app/'usr/bin/telaleve')
 shutil.copy2(base/'src-tauri/icons/icon.png',app/'usr/share/icons/hicolor/256x256/apps/telaleve.png')
 (app/'usr/share/applications/telaleve.desktop').write_text('[Desktop Entry]\nType=Application\nName=TelaLeve\nExec=telaleve\nIcon=telaleve\nTerminal=false\nCategories=Utility;Network;\n')
-for name in ['app','coreelements','ximagesrc','videoconvertscale','videobox','vpx','rtp','rtpmanager','webrtc','dtls','srtp','sctp','udp','tcp','videoparsersbad','videotestsrc']:
+for name in ['app','coreelements','ximagesrc','videoconvertscale','videobox','vpx','rtp','rtpmanager','webrtc','dtls','srtp','sctp','udp','tcp','videoparsersbad','videotestsrc','videorate','pipewire']:
  shutil.copy2(Path('/usr/lib/x86_64-linux-gnu/gstreamer-1.0')/f'libgst{name}.so',app/'usr/lib/gstreamer-1.0')
 shutil.copy2(args.nice_plugin.resolve(),app/'usr/lib/gstreamer-1.0')
 for name in ['WebKitWebProcess','WebKitNetworkProcess','WebKitGPUProcess']:shutil.copy2(Path('/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1')/name,app/'usr/bin')

@@ -72,3 +72,32 @@ Removido o botão de saída do vídeo. Na tela cheia nativa, a saída fica a car
 ## 0.1.3 — modo Fluidez
 
 Adicionado 720p/60 FPS com bitrate inicial de 4 Mbps e máximo de 6 Mbps. Equilibrado permanece em 30 FPS por padrão. O teste nativo passou alternando vinte vezes entre monitor/janela e os perfis 30/60 FPS, conferindo as caps negociadas da captura em cada troca. Isso não comprova a taxa efetivamente exibida no Android. Seis testes Rust e os testes de tela cheia passaram. Android físico e comparação com Deskreen continuam pendentes.
+
+## 0.2.0 — compatibilidade Linux (22/11/2026)
+
+### Implementação
+
+- Captura X11 direta, inclusive no Flatpak, e fallback para o desktop completo quando RandR não está disponível.
+- Captura Wayland por portal ScreenCast/PipeWire, com seleção autorizada pelo sistema, conexões PipeWire independentes por pipeline e encerramento da sessão ao revogar o compartilhamento.
+- A seleção disponível depende do compositor; alguns backends oferecem somente monitor. As dimensões físicas dos quadros determinam a escala, sem ampliar entradas pequenas.
+- Instalador de dependências para famílias Debian/Ubuntu, Fedora, Arch e openSUSE; diagnóstico retorna erro quando faltam plugins, sessão gráfica ou portal necessário.
+- Empacotador Flatpak com runtime GNOME 51, para binários nativos x86_64/aarch64. O `.deb` usa versão e arquitetura locais, sem fixar amd64 no script.
+
+### Verificado localmente em Debian 13 x86_64
+
+- Cinco testes do núcleo passaram, incluindo seleção de backend e serialização de origens sem expor acesso ao portal.
+- Onze testes Rust nativos passaram, incluindo o teste de integração X11 em Xvfb, vinte trocas de captura/qualidade, preservação da origem diante de falha, ausência de ampliação de quadros pequenos e cancelamento da preparação após encerramento da sessão.
+- O teste de integração passou novamente com RandR desabilitado, exercitando a captura do desktop completo.
+- Seis testes dos scripts Linux passaram, sem instalar pacotes: seleção de família, derivados, distribuição desconhecida, plugins ausentes, Wayland sem X11, portal ausente e captura X11 no Flatpak sem exigir portal Wayland.
+- Compilação/checagem TypeScript e suíte de tela cheia passaram. Clippy em todos os targets locais passou com avisos tratados como erro; formatação Rust e diff conferidos.
+- Build otimizado gerado. As bibliotecas dinâmicas do binário 0.2.0 foram encontradas dentro do runtime GNOME 51, sem depender das bibliotecas do host.
+- Um pacote Flatpak de teste foi exportado e validado pelo Flatpak, incluindo ícone e metadados. Esse teste do empacotador não substitui testar a aplicação com receptor real.
+
+### Validações ainda necessárias
+
+- Seleção e transmissão reais em GNOME/KDE/wlroots/Hyprland em Wayland, cancelamento pelo compositor, reconexão e troca de origem com vídeo no receptor.
+- Android físico, sessão contínua de 30 minutos e benchmarks comparativos.
+- Instalação e uso em sistemas limpos de cada distribuição, com seus drivers e backends de portal.
+- Binário/Flatpak ARM64 em equipamento real. O workflow inclui Ubuntu ARM64 e ambientes Fedora, Arch e openSUSE; consulte os resultados de cada execução antes de tratá-los como testes concluídos.
+
+A implementação amplia a compatibilidade; não demonstra funcionamento em todas as versões de Linux, compositores, drivers e arquiteturas existentes. Os artefatos antigos 0.1.3 permanecem limitados ao ambiente descrito nas seções históricas.

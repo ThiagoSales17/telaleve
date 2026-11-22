@@ -6,12 +6,12 @@
 
 **Sua tela Linux no Android. Sem cabos, sem nuvem, na sua rede local.**
 
-Transmissão de monitor ou janela do **Linux/X11** para o **Chrome no Android**, com um emissor em **Rust + Tauri 2 + GStreamer** e vídeo via **WebRTC**.
+Transmissão de monitor ou janela do **Linux (X11 ou Wayland)** para o **Chrome no Android**, com um emissor em **Rust + Tauri 2 + GStreamer** e vídeo via **WebRTC**.
 
 <br />
 
 ![Status](https://img.shields.io/badge/status-valida%C3%A7%C3%A3o%20parcial-e3b341?style=flat-square)
-![Linux](https://img.shields.io/badge/plataforma-Linux%20%7C%20X11-333333?style=flat-square&logo=linux&logoColor=white)
+![Linux](https://img.shields.io/badge/plataforma-Linux%20%7C%20X11%20%2F%20Wayland-333333?style=flat-square&logo=linux&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Tauri%202-B7410E?style=flat-square&logo=rust&logoColor=white)
 ![WebRTC](https://img.shields.io/badge/streaming-WebRTC-2563EB?style=flat-square)
 ![Android](https://img.shields.io/badge/receptor-Chrome%20Android-188038?style=flat-square&logo=googlechrome&logoColor=white)
@@ -31,32 +31,40 @@ O **TelaLeve** permite compartilhar a imagem de um monitor ou de uma janela do d
 
 | Recurso | Implementação atual |
 | :-- | :-- |
-| **Origem da captura** | Monitor ou janela em sessão **X11** |
+| **Origem da captura** | Monitor/janela em **X11** ou pelo **portal/PipeWire** em Wayland |
 | **Receptor** | **Chrome para Android**, na rede local |
 | **Transmissão** | **WebRTC** com seleção de encoder H.264 ou VP8 |
 | **Pareamento** | QR code e aprovação explícita no computador |
 | **Acesso** | Um receptor por sessão; código de uso único |
 | **Ajustes** | Perfis de qualidade e troca de origem durante a sessão |
-| **Distribuição** | Pacotes **`.deb`** e **AppImage** |
+| **Distribuição** | **Flatpak**, **`.deb`** e AppImage legado |
+
+## Compatibilidade Linux
+
+A versão **0.2.0** adiciona captura por **portal/PipeWire** para Wayland, inclusive em Flatpak. O instalador de dependências reconhece as famílias **Debian/Ubuntu, Fedora, Arch e openSUSE**. O empacotador Flatpak aceita **x86_64 e ARM64**, com um binário nativo para cada arquitetura.
+
+Consulte [LINUX.md](LINUX.md) para instalação, requisitos do desktop, geração do Flatpak e limites de compatibilidade. A presença de uma implementação não comprova que toda combinação de distribuição, versão, arquitetura e compositor foi testada. A seleção real em Wayland e a experiência no Android continuam no roteiro de validação.
 
 ## 🚀 Comece em poucos passos
 
 ### 1. Prepare o ambiente
 
-Ambiente alvo dos pacotes: **Debian 13, x86_64/amd64, com sessão gráfica X11**. Para executar pelo código-fonte, tenha **Rust estável**, Node.js/npm e uma rede local acessível pelo computador e celular. O script de instalação de dependências é voltado ao Debian; outras distribuições podem exigir ajustes e não têm compatibilidade comprovada. Privilégios de administrador são necessários para instalar as dependências do sistema.
+Para usar um pacote pronto em diferentes distribuições, consulte a seção de **Flatpak** abaixo. Para desenvolver pelo código-fonte, tenha **Rust estável**, Node.js/npm, GTK 3, **WebKitGTK 4.1** e **GStreamer 1.20 ou superior**. O script de dependências detecta a família da distribuição. Privilégios de administrador são necessários para instalar dependências do sistema.
+
+Em **X11**, a origem é escolhida na lista do aplicativo. Em **Wayland**, configure PipeWire e um backend ScreenCast de `xdg-desktop-portal` compatível com o desktop, conforme [LINUX.md](LINUX.md).
 
 Execute os comandos a seguir na **raiz do projeto**, onde está o arquivo `package.json`:
 
 ```bash
 ./scripts/install-deps.sh
 ./scripts/diagnose.sh
-npm install
+npm ci
 npm run dev
 ```
 
 ### 2. Conecte o celular
 
-1. No computador, selecione o **monitor ou janela** que deseja transmitir.
+1. No computador, selecione o **monitor ou janela**. Em Wayland, use **Escolher tela ou janela** e autorize no diálogo do sistema; na primeira conexão, **Gerar conexão** também abre o seletor.
 2. Escolha a **interface IPv4** e o perfil de qualidade.
 3. Clique em **Gerar conexão** e escaneie o QR code no Android.
 4. No Chrome, toque em **Conectar**.
@@ -71,8 +79,8 @@ O código de pareamento é **de uso único** e expira em **cinco minutos**. Para
 
 ```text
 ┌─────────────────────────────────────┐
-│             Linux / X11             │
-│ Monitor ou janela → GStreamer       │
+│             Linux / X11 ou Wayland  │
+│ X11 ou portal/PipeWire → GStreamer       │
 │          Rust + Tauri 2             │
 └──────────────────┬──────────────────┘
                    │
@@ -115,34 +123,45 @@ Para solicitar **60 FPS**, selecione **Fluidez** antes de gerar o QR code ou dur
 
 ## 📦 Instalação e pacotes
 
+### Flatpak para diferentes distribuições
+
+Depois de baixar ou gerar o pacote correspondente à arquitetura, execute na pasta do arquivo:
+
+```bash
+flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
+flatpak run io.github.ThiagoSales17.TelaLeve
+```
+
+O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [LINUX.md](LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Os arquivos prontos dependem da disponibilidade nas releases; um clone Git não contém os instaladores.
+
 ### Pacote Debian (`.deb`)
 
-Os pacotes distribuídos têm como alvo **Debian 13, amd64**. Depois de preparar o ambiente, execute na raiz do projeto para gerar um pacote com o empacotador Tauri:
+Depois de preparar o ambiente, execute na raiz do projeto para gerar um pacote com o empacotador Tauri:
 
 ```bash
 ./scripts/build-deb.sh
 sudo apt install ./src-tauri/target/release/bundle/deb/*.deb
 ```
 
-Como alternativa, gere o pacote otimizado **`dist/telaleve_0.1.3-preview1_amd64.deb`** a partir do binário release:
+Como alternativa, gere o pacote a partir do binário release:
 
 ```bash
 npm run build:web
-cargo build --release --manifest-path src-tauri/Cargo.toml
+cargo build --release --locked --manifest-path src-tauri/Cargo.toml
 ./scripts/package-binary.sh
 ```
 
-Os binários e a pasta `dist/` **não acompanham um clone Git**. Para instalar um pacote pronto, baixe-o das releases e execute o comando com o caminho em que o salvou. Se você gerou o pacote acima, instale-o a partir da raiz do projeto:
+A versão vem de `package.json` e a arquitetura de `dpkg --print-architecture`. Em um build nativo amd64 da versão 0.2.0:
 
 ```bash
-sudo apt install ./dist/telaleve_0.1.3-preview1_amd64.deb
+sudo apt install ./dist/telaleve_0.2.0_amd64.deb
 ```
 
-O pacote declara dependências de plugins de vídeo, **WebKitGTK** e transporte **ICE**. Encoders H.264 por hardware podem exigir **drivers e plugins opcionais**. A compatibilidade de instalação depende das bibliotecas e dos drivers disponíveis no sistema.
+Os binários e a pasta `dist/` **não acompanham um clone Git**. Para instalar um pacote baixado, use o caminho em que o salvou. Um `.deb` exige as bibliotecas compatíveis do sistema em que será instalado; para distribuir entre sistemas com bibliotecas diferentes, use o Flatpak.
 
-### AppImage
+### AppImage legado
 
-Baixe **`TelaLeve-0.1.3-x86_64.AppImage`** nas releases ou gere o arquivo conforme [APPIMAGE.md](APPIMAGE.md). O alvo é **Debian 13, x86_64 e X11**; a compatibilidade em sistema limpo ainda está pendente. O AppImage dispensa instalação via `apt`. Consulte o mesmo guia para execução e alternativa sem FUSE.
+O arquivo **`TelaLeve-0.1.3-x86_64.AppImage`** é o artefato anterior, voltado a **Debian 13, x86_64 e X11**. Ele não contém as mudanças da versão 0.2.0. Consulte [APPIMAGE.md](APPIMAGE.md) para execução e alternativa sem FUSE. O empacotador manual de AppImage continua específico desse ambiente; o Flatpak é o caminho para ampliar a distribuição.
 
 ### Releases
 
@@ -157,6 +176,7 @@ TelaLeve/
 ├── web/              # HTML, CSS e JavaScript gerado
 ├── core-tests/       # Testes do modelo de acesso, sem GTK/GStreamer
 ├── scripts/          # Dependências, diagnóstico, build e medição
+├── LINUX.md          # Compatibilidade, Wayland e Flatpak
 ├── VALIDATION.md     # Checklist de validação
 ├── APPIMAGE.md       # Uso e validação do AppImage
 └── HISTORY.md        # Histórico retrospectivo de commits
@@ -175,6 +195,7 @@ npm run build:web
 npm test
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
+python3 tests/linux-scripts.test.py
 ```
 
 Os testes de `core-tests` exercitam o mesmo modelo de acesso sem precisar inicializar GTK ou GStreamer. `npm test` executa os testes de tela cheia sobre o JavaScript gerado por `npm run build:web`.
@@ -185,7 +206,7 @@ O teste nativo de integração é **ignorado por padrão** porque exige uma sess
 cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored
 ```
 
-Essas verificações não substituem os testes com um receptor real. A validação em **Android físico**, a transmissão contínua de **30 minutos**, os codecs no receptor e a instalação em **Debian 13 limpo** continuam pendentes. Consulte [VALIDATION.md](VALIDATION.md) para os resultados registrados e o roteiro manual de aceite.
+Essas verificações não substituem os testes com um receptor real. A seleção e transmissão reais por **Wayland/portal**, a experiência em **Android físico**, a sessão contínua de **30 minutos** e a instalação em sistemas limpos continuam pendentes. Os testes de pipeline não substituem essas verificações. Consulte [VALIDATION.md](VALIDATION.md) para os resultados registrados e o roteiro manual de aceite.
 
 ### Medir o consumo de recursos
 
@@ -201,7 +222,6 @@ Repita a medição com o processo principal do **Deskreen**, usando a mesma conf
 
 O foco atual é **compartilhar vídeo de uma sessão X11 para um único Chrome no Android pela rede local**. Os seguintes recursos estão **fora do escopo da versão atual**:
 
-- Suporte a Wayland
 - Transmissão de áudio
 - Controle remoto do computador
 - Monitor virtual
