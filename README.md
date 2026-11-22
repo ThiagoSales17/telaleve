@@ -1,71 +1,217 @@
+<div align="center">
+
 # TelaLeve
 
-Emissor Linux/X11 em Rust + Tauri 2 e GStreamer; receptor Chrome para Android na rede local. Implementação inicial, ainda sem validação em celular real. Consulte VALIDATION.md antes de usar como versão pronta.
+**Sua tela Linux no Android. Sem cabos, sem nuvem, na sua rede local.**
 
-## Preparar e executar no Debian 13
+Transmissão de monitor ou janela do **Linux/X11** para o **Chrome no Android**, com um emissor em **Rust + Tauri 2 + GStreamer** e vídeo via **WebRTC**.
 
-Requer sessão X11, Rust estável e privilégios de administrador apenas para instalar dependências:
+<br />
 
-```sh
+![Status](https://img.shields.io/badge/status-valida%C3%A7%C3%A3o%20parcial-e3b341?style=flat-square)
+![Linux](https://img.shields.io/badge/plataforma-Linux%20%7C%20X11-333333?style=flat-square&logo=linux&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-Tauri%202-B7410E?style=flat-square&logo=rust&logoColor=white)
+![WebRTC](https://img.shields.io/badge/streaming-WebRTC-2563EB?style=flat-square)
+![Android](https://img.shields.io/badge/receptor-Chrome%20Android-188038?style=flat-square&logo=googlechrome&logoColor=white)
+
+[**Começar**](#-comece-em-poucos-passos) · [**Como funciona**](#-como-funciona) · [**Downloads**](#-instalação-e-pacotes) · [**Validação**](VALIDATION.md)
+
+</div>
+
+> [!NOTE]
+> **Em desenvolvimento — validação parcial.** Há verificações automatizadas e testes nativos registrados em [VALIDATION.md](VALIDATION.md). A validação em Android físico, a transmissão contínua de 30 minutos e a instalação em Debian limpo continuam pendentes.
+
+---
+
+## ✦ O que é o TelaLeve?
+
+O **TelaLeve** permite compartilhar a imagem de um monitor ou de uma janela do desktop Linux com um celular Android conectado à mesma rede. O celular atua como **receptor no navegador**: não é necessário instalar um aplicativo Android dedicado.
+
+| Recurso | Implementação atual |
+| :-- | :-- |
+| **Origem da captura** | Monitor ou janela em sessão **X11** |
+| **Receptor** | **Chrome para Android**, na rede local |
+| **Transmissão** | **WebRTC** com seleção de encoder H.264 ou VP8 |
+| **Pareamento** | QR code e aprovação explícita no computador |
+| **Acesso** | Um receptor por sessão; código de uso único |
+| **Ajustes** | Perfis de qualidade e troca de origem durante a sessão |
+| **Distribuição** | Pacotes **`.deb`** e **AppImage** |
+
+## 🚀 Comece em poucos passos
+
+### 1. Prepare o ambiente
+
+Ambiente alvo dos pacotes: **Debian 13, x86_64/amd64, com sessão gráfica X11**. Para executar pelo código-fonte, tenha **Rust estável**, Node.js/npm e uma rede local acessível pelo computador e celular. O script de instalação de dependências é voltado ao Debian; outras distribuições podem exigir ajustes e não têm compatibilidade comprovada. Privilégios de administrador são necessários para instalar as dependências do sistema.
+
+Execute os comandos a seguir na **raiz do projeto**, onde está o arquivo `package.json`:
+
+```bash
 ./scripts/install-deps.sh
 ./scripts/diagnose.sh
 npm install
 npm run dev
 ```
 
-Selecione monitor ou janela, interface IPv4 e qualidade. Clique em **Gerar conexão**, leia o QR code no celular, toque em **Conectar** e aprove no computador. O código é de uso único e expira em cinco minutos. Use **Aplicar tela e qualidade** para trocar a origem. **Encerrar compartilhamento** revoga o acesso.
+### 2. Conecte o celular
 
-Computador e celular precisam estar na mesma rede, sem isolamento entre clientes. Permita TCP 9876 e o tráfego UDP negociado pelo WebRTC no firewall da interface local. Não configure encaminhamento de portas. A página e a sinalização são HTTP/WS locais, sem TLS; o vídeo é protegido pelo WebRTC. Use uma rede confiável. Um segundo receptor é recusado. O token não é enviado na URL HTTP: fica no fragmento do QR code, removido da barra ao carregar a página.
+1. No computador, selecione o **monitor ou janela** que deseja transmitir.
+2. Escolha a **interface IPv4** e o perfil de qualidade.
+3. Clique em **Gerar conexão** e escaneie o QR code no Android.
+4. No Chrome, toque em **Conectar**.
+5. **Aprove a conexão no computador** para iniciar a transmissão.
 
-## Pacote Debian
+O código de pareamento é **de uso único** e expira em **cinco minutos**. Para alterar a origem ou o perfil sem recriar a sessão, use **Aplicar tela e qualidade**. Para revogar o acesso, clique em **Encerrar compartilhamento**.
 
-```sh
+> [!NOTE]
+> O computador e o celular devem estar na **mesma rede local**, sem isolamento entre clientes. Libere **TCP 9876** e o tráfego **UDP negociado pelo WebRTC** no firewall da interface local. **Não configure encaminhamento de portas** no roteador.
+
+## ⚙️ Como funciona
+
+```text
+┌─────────────────────────────────────┐
+│             Linux / X11             │
+│ Monitor ou janela → GStreamer       │
+│          Rust + Tauri 2             │
+└──────────────────┬──────────────────┘
+                   │
+       Sinalização local HTTP / WS
+            Vídeo via WebRTC
+                   │
+┌──────────────────▼──────────────────┐
+│           Chrome / Android          │
+│       Receptor na rede local        │
+└─────────────────────────────────────┘
+```
+
+**Codificação.** O emissor tenta usar **H.264** (VA, NVIDIA ou QSV) quando o navegador o oferece e um pipeline de teste produz EOS. Se não houver encoder funcional, utiliza **VP8**. A disponibilidade de H.264 depende dos drivers, plugins e recursos do equipamento; os testes já realizados não comprovam a compatibilidade desse encoder em todas as máquinas ou sua decodificação no Android físico.
+
+**Adaptação.** O bitrate é ajustado considerando **perda de pacotes e jitter** informados pelo receptor, respeitando os limites de cada perfil. As resoluções configuradas representam **limites máximos**: imagens menores são centralizadas com bordas, sem ampliação.
+
+**Mudança de origem.** A troca aguarda o primeiro quadro da nova captura e mantém a conexão ativa. Se a nova captura falhar, a origem anterior é preservada. Se a origem atual desaparecer, é necessário selecionar e aplicar uma origem disponível; a negociação é reiniciada automaticamente após essa seleção.
+
+**Reconexão.** O sistema tenta retomar a sessão por até **30 segundos** após uma desconexão detectada e verifica conexões silenciosas com **ping a cada cinco segundos**. O segredo de retomada permanece somente na memória da página: **fechar ou recarregar exige um novo QR code**.
+
+## 🎛️ Perfis de qualidade
+
+| Perfil | Resolução máxima | FPS solicitado | Bitrate inicial | Bitrate máximo |
+| :-- | --: | --: | --: | --: |
+| **Econômico** | 720p | 20 | 1,5 Mbps | 2,5 Mbps |
+| **Equilibrado** · padrão | 720p | 30 | 2,5 Mbps | 4 Mbps |
+| **Fluidez** | 720p | 60 | 4 Mbps | 6 Mbps |
+| **Nitidez** | 1080p | 30 | 4 Mbps | 6 Mbps |
+
+Para solicitar **60 FPS**, selecione **Fluidez** antes de gerar o QR code ou durante a sessão e clique em **Aplicar tela e qualidade**. A taxa efetivamente entregue depende de **hardware, rede e receptor**.
+
+## 🔐 Segurança e limites da conexão
+
+- O pareamento exige **aprovação no desktop**, com token **descartável** e validade de **cinco minutos**.
+- **Apenas um receptor** é aceito por sessão; um segundo é recusado.
+- O token **não integra a URL enviada ao servidor HTTP**: é transportado no **fragmento** do QR code, removido da barra de endereço quando a página carrega.
+- **A página e a sinalização usam HTTP/WS locais, sem TLS**. O tráfego de vídeo é protegido pelo **WebRTC**.
+- O servidor escuta em **todas as interfaces IPv4** (`0.0.0.0:9876`). A interface selecionada altera o endereço do QR code; restrinja o acesso à rede desejada pelo firewall.
+- Use somente uma **rede local confiável**. O projeto não foi concebido para exposição direta à internet.
+
+## 📦 Instalação e pacotes
+
+### Pacote Debian (`.deb`)
+
+Os pacotes distribuídos têm como alvo **Debian 13, amd64**. Depois de preparar o ambiente, execute na raiz do projeto para gerar um pacote com o empacotador Tauri:
+
+```bash
 ./scripts/build-deb.sh
 sudo apt install ./src-tauri/target/release/bundle/deb/*.deb
 ```
 
-A entrega inclui um pacote otimizado inicial em `dist/telaleve_0.1.3-preview1_amd64.deb`, gerado por `scripts/package-binary.sh` a partir de `cargo build --release`. Para instalar esse pacote, use `sudo apt install ./dist/telaleve_0.1.3-preview1_amd64.deb`. O script acima permite gerar novamente o pacote pelo empacotador Tauri. A instalação em Debian limpo ainda precisa ser validada. O pacote declara plugins de vídeo, WebKitGTK e transporte ICE; encoders H.264 por hardware dependem de drivers e plugins opcionais instalados no computador.
+Como alternativa, gere o pacote otimizado **`dist/telaleve_0.1.3-preview1_amd64.deb`** a partir do binário release:
 
-## Código e testes
+```bash
+npm run build:web
+cargo build --release --manifest-path src-tauri/Cargo.toml
+./scripts/package-binary.sh
+```
 
-- `src-tauri/src`: comandos desktop, servidor local, controle de acesso, enumeração X11 e pipeline.
-- `frontend`: fontes TypeScript; `web`: HTML/CSS e JavaScript gerado.
-- `core-tests`: testa o mesmo modelo de acesso sem depender de GTK/GStreamer.
+Os binários e a pasta `dist/` **não acompanham um clone Git**. Para instalar um pacote pronto, baixe-o das releases e execute o comando com o caminho em que o salvou. Se você gerou o pacote acima, instale-o a partir da raiz do projeto:
 
-```sh
+```bash
+sudo apt install ./dist/telaleve_0.1.3-preview1_amd64.deb
+```
+
+O pacote declara dependências de plugins de vídeo, **WebKitGTK** e transporte **ICE**. Encoders H.264 por hardware podem exigir **drivers e plugins opcionais**. A compatibilidade de instalação depende das bibliotecas e dos drivers disponíveis no sistema.
+
+### AppImage
+
+Baixe **`TelaLeve-0.1.3-x86_64.AppImage`** nas releases ou gere o arquivo conforme [APPIMAGE.md](APPIMAGE.md). O alvo é **Debian 13, x86_64 e X11**; a compatibilidade em sistema limpo ainda está pendente. O AppImage dispensa instalação via `apt`. Consulte o mesmo guia para execução e alternativa sem FUSE.
+
+### Releases
+
+Os instaladores podem ser obtidos nas [**Releases do TelaLeve**](https://github.com/ThiagoSales17/telaleve/releases). **O repositório e suas releases são privados**: é necessário entrar com uma conta que tenha acesso.
+
+## 🧱 Estrutura do projeto
+
+```text
+TelaLeve/
+├── src-tauri/src/    # Desktop, servidor, acesso, X11 e pipeline
+├── frontend/         # Fontes TypeScript
+├── web/              # HTML, CSS e JavaScript gerado
+├── core-tests/       # Testes do modelo de acesso, sem GTK/GStreamer
+├── scripts/          # Dependências, diagnóstico, build e medição
+├── VALIDATION.md     # Checklist de validação
+├── APPIMAGE.md       # Uso e validação do AppImage
+└── HISTORY.md        # Histórico retrospectivo de commits
+```
+
+Os binários, caches e dependências **não são versionados** no Git.
+
+## 🧪 Testes e validação
+
+Depois de preparar o ambiente e instalar as dependências npm, execute na raiz do projeto:
+
+```bash
 cargo test --manifest-path core-tests/Cargo.toml
 npm run check
+npm run build:web
+npm test
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 ```
 
-O encoder tenta H.264 (VA, NVIDIA ou QSV) se oferecido pelo navegador e se um pipeline de teste produzir EOS. Sem um encoder funcional, usa VP8. Não é uma certificação de compatibilidade H.264: o teste ponta a ponta ainda é obrigatório. O ajuste de bitrate usa perda e jitter relatados pelo receptor, com limites por perfil. As resoluções são limites máximos; o vídeo menor é centralizado com bordas, sem ampliação. Trocas de captura aguardam um primeiro quadro e mantêm a conexão; falhas preservam a origem anterior. Origem perdida exige escolha explícita e reinicia a negociação automaticamente após a seleção.
+Os testes de `core-tests` exercitam o mesmo modelo de acesso sem precisar inicializar GTK ou GStreamer. `npm test` executa os testes de tela cheia sobre o JavaScript gerado por `npm run build:web`.
 
-A sessão tenta retomar por até 30 segundos após detectar a desconexão; a detecção de conexão silenciosa usa ping a cada cinco segundos. O segredo de retomada fica apenas na memória da página. Recarregar/fechar a página exige novo QR code.
+O teste nativo de integração é **ignorado por padrão** porque exige uma sessão X11 acessível e os plugins GStreamer. Para executá-lo explicitamente no computador alvo:
 
-## Próximas validações obrigatórias
+```bash
+cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored
+```
 
-Executar a lista em VALIDATION.md em Debian 13 e Android antes de distribuir. Wayland, áudio, controle remoto, monitor virtual, internet e vários receptores estão fora desta versão. Não há alegação de ganho de desempenho sem medição comparativa.
+Essas verificações não substituem os testes com um receptor real. A validação em **Android físico**, a transmissão contínua de **30 minutos**, os codecs no receptor e a instalação em **Debian 13 limpo** continuam pendentes. Consulte [VALIDATION.md](VALIDATION.md) para os resultados registrados e o roteiro manual de aceite.
 
-## Medir consumo
+### Medir o consumo de recursos
 
-Com o emissor transmitindo, encontre o PID e execute `python3 scripts/measure.py PID --seconds 1800 --output telaleve.csv`. Repita com o PID principal do Deskreen e a mesma configuração. O CSV soma RSS da árvore de processos (incluindo páginas compartilhadas contadas em cada processo) e informa CPU em relação a um núcleo. Não mede consumo da GPU nem atraso entre telas.
+Durante a transmissão, identifique o PID do processo emissor e execute:
 
-## AppImage
+```bash
+python3 scripts/measure.py PID --seconds 1800 --output telaleve.csv
+```
 
-Também disponível como `TelaLeve-0.1.3-x86_64.AppImage`, sem instalação via apt. Consulte [APPIMAGE.md](APPIMAGE.md) para execução, modo sem FUSE e validações.
+Repita a medição com o processo principal do **Deskreen**, usando a mesma configuração, para uma comparação controlada. O CSV registra **CPU relativa a um núcleo** e a **soma do RSS da árvore de processos** (páginas compartilhadas podem ser contabilizadas em mais de um processo). O script **não mede uso de GPU nem latência entre telas**. Não há alegação de superioridade de desempenho sem dados comparativos.
 
-## GitHub
+## 🗺️ Escopo desta versão
 
-Instaladores AppImage e Debian estão nas [Releases privadas](https://github.com/ThiagoSales17/telaleve/releases). É necessário entrar na conta com acesso ao repositório. Binários, caches e dependências não são versionados no Git. Consulte HISTORY.md para a organização retrospectiva dos commits.
+O foco atual é **compartilhar vídeo de uma sessão X11 para um único Chrome no Android pela rede local**. Os seguintes recursos estão **fora do escopo da versão atual**:
 
-## Qualidade
+- Suporte a Wayland
+- Transmissão de áudio
+- Controle remoto do computador
+- Monitor virtual
+- Acesso pela internet
+- Múltiplos receptores simultâneos
 
-| Modo | Limite | FPS | Bitrate inicial / máximo |
-|---|---|---|---|
-| Econômico | 720p | 20 | 1,5 / 2,5 Mbps |
-| Equilibrado (padrão) | 720p | 30 | 2,5 / 4 Mbps |
-| Fluidez | 720p | 60 | 4 / 6 Mbps |
-| Nitidez | 1080p | 30 | 4 / 6 Mbps |
+---
 
-Selecione Fluidez e clique em **Aplicar tela e qualidade** durante uma sessão, ou escolha antes de gerar o QR. 60 FPS é a configuração solicitada; a taxa entregue depende do computador, rede e receptor.
+<div align="center">
+
+**TelaLeve** · Em desenvolvimento · Validação parcial
+
+[Validação](VALIDATION.md) · [AppImage](APPIMAGE.md) · [Histórico](HISTORY.md) · [Releases](https://github.com/ThiagoSales17/telaleve/releases)
+
+</div>
