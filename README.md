@@ -206,6 +206,10 @@ O foco atual é **compartilhar vídeo de uma sessão X11 para um único Chrome n
 - Acesso pela internet
 - Múltiplos receptores simultâneos
 
+## Licença
+
+O código do TelaLeve é distribuído sob a **licença MIT**. Consulte [LICENSE](LICENSE) para o texto completo. Dependências e componentes de terceiros mantêm suas respectivas licenças.
+
 ---
 
 <div align="center">
