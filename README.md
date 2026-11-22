@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/telaleve-logo.png" alt="Logo do TelaLeve: monitor e celular" width="180" />
+<img src="docs/assets/telaleve-banner.png" alt="TelaLeve: sua tela Linux no Android. Sem cabos, sem nuvem, na sua rede local." width="100%" />
 
 # TelaLeve
 
