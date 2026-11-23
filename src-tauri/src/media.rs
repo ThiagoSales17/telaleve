@@ -49,10 +49,58 @@ fn capture(s: &Source, q: Quality, remote: Option<&OwnedFd>) -> Result<gst::Bin,
 }
 // The caps probe uses physical frame dimensions rather than portal logical coordinates.
 fn normalize_portal(q: Quality) -> String {
-    let (w, h, f, _, _) = q.settings();
-    format!("videoconvert ! videorate drop-only=true max-rate={f} ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
+    let (w, h, _, _, _) = q.settings();
+    format!("videoconvert ! identity name=portal-rate ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
+}
+fn configure_portal_timing(bin: &gst::Bin, quality: Quality) -> Result<(), String> {
+    // Portal streams may advertise 0/1 and deliver frames only on desktop damage.
+    // Rate-limit by timestamps without videorate's version-dependent 0/1 handling.
+    let rate = bin
+        .by_name("portal-rate")
+        .ok_or("Limitador de quadros indisponível")?;
+    let rate_pad = rate
+        .static_pad("src")
+        .ok_or("Saída do limitador indisponível")?;
+    let fps = quality.settings().2;
+    let interval = gst::ClockTime::from_nseconds(1_000_000_000 / fps as u64);
+    let last = std::sync::Mutex::new(None::<gst::ClockTime>);
+    rate_pad
+        .add_probe(
+            gst::PadProbeType::BUFFER | gst::PadProbeType::EVENT_DOWNSTREAM,
+            move |_, info| {
+                match info.data.as_mut() {
+                    Some(gst::PadProbeData::Event(event)) => {
+                        if let gst::EventView::Caps(caps_event) = event.view() {
+                            let mut caps = caps_event.caps().to_owned();
+                            if let Some(structure) = caps.make_mut().structure_mut(0) {
+                                structure.set("framerate", gst::Fraction::new(fps, 1));
+                            }
+                            *event = gst::event::Caps::new(&caps);
+                            *last.lock().unwrap() = None;
+                        }
+                    }
+                    Some(gst::PadProbeData::Buffer(buffer)) => {
+                        if let Some(pts) = buffer.pts() {
+                            let mut last = last.lock().unwrap();
+                            if last.is_some_and(|previous| {
+                                pts >= previous && pts - previous < interval
+                            }) {
+                                return gst::PadProbeReturn::Drop;
+                            }
+                            *last = Some(pts);
+                        }
+                        buffer.make_mut().set_duration(interval);
+                    }
+                    _ => {}
+                }
+                gst::PadProbeReturn::Ok
+            },
+        )
+        .ok_or("Não foi possível configurar o limite de quadros")?;
+    Ok(())
 }
 fn configure_portal_scaling(bin: &gst::Bin, quality: Quality) -> Result<(), String> {
+    configure_portal_timing(bin, quality)?;
     let scale = bin
         .by_name("portal-scale")
         .ok_or("Conversor de escala indisponível")?;
@@ -446,6 +494,58 @@ mod tests {
         assert!(
             sample.is_some(),
             "A captura de um desktop estático dependeu indevidamente de um segundo quadro ou EOS"
+        );
+    }
+    #[test]
+    fn portal_variable_rate_is_limited_without_duplicate_frames() {
+        gst::init().unwrap();
+        let desc = format!("appsrc name=input is-live=true format=time ! video/x-raw,format=RGB,width=320,height=240,framerate=0/1 ! {} ! appsink name=sample sync=false", normalize_portal(Quality::Balanced));
+        let pipeline = gst::parse::launch(&desc)
+            .unwrap()
+            .downcast::<gst::Pipeline>()
+            .unwrap();
+        configure_portal_scaling(pipeline.upcast_ref(), Quality::Balanced).unwrap();
+        let input = pipeline.by_name("input").unwrap();
+        let sink = pipeline.by_name("sample").unwrap();
+        pipeline.set_state(gst::State::Playing).unwrap();
+        for i in 0..12 {
+            let mut frame = gst::Buffer::from_mut_slice(vec![255u8; 320 * 240 * 3]);
+            frame
+                .make_mut()
+                .set_pts(gst::ClockTime::from_nseconds(i * 8_333_334));
+            assert_eq!(
+                input.emit_by_name::<gst::FlowReturn>("push-buffer", &[&frame]),
+                gst::FlowReturn::Ok
+            );
+        }
+        assert_eq!(
+            input.emit_by_name::<gst::FlowReturn>("end-of-stream", &[]),
+            gst::FlowReturn::Ok
+        );
+        let mut count = 0;
+        while let Some(sample) =
+            sink.emit_by_name::<Option<gst::Sample>>("try-pull-sample", &[&1_000_000_000u64])
+        {
+            assert_eq!(
+                sample
+                    .caps()
+                    .unwrap()
+                    .structure(0)
+                    .unwrap()
+                    .get::<gst::Fraction>("framerate")
+                    .unwrap(),
+                gst::Fraction::new(30, 1)
+            );
+            assert_eq!(
+                sample.buffer().unwrap().duration(),
+                Some(gst::ClockTime::from_nseconds(33_333_333))
+            );
+            count += 1;
+        }
+        pipeline.set_state(gst::State::Null).unwrap();
+        assert_eq!(
+            count, 3,
+            "O limite de 30 FPS não foi aplicado à entrada variável de 120 FPS"
         );
     }
     #[test]
