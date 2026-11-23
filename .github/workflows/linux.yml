@@ -23,6 +23,13 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Resolve Jammy runner libunwind conflict
+        if: matrix.os == 'ubuntu-22.04'
+        # The hosted image includes LLVM's libunwind, which conflicts with GStreamer headers.
+        # https://github.com/actions/runner-images/issues/9546
+        run: |
+          packages=$(dpkg-query -W -f='${Package} ${db:Status-Status}\n' 'libunwind-*-dev' 2>/dev/null | awk '$2 == "installed" {print $1}' || true)
+          if [ -n "$packages" ]; then sudo apt-get remove -y $packages; fi
       - name: Install native dependencies
         run: ./scripts/install-deps.sh
       - name: Prepare Rust
@@ -62,7 +69,16 @@ jobs:
           case "$ID" in
             fedora) dnf install -y git ca-certificates curl ;;
             arch) pacman -Syu --noconfirm git ca-certificates curl ;;
-            opensuse*) zypper --non-interactive install git ca-certificates curl ;;
+            opensuse*)
+              sed -i 's|http://download.opensuse.org|https://download.opensuse.org|g' /etc/zypp/repos.d/*.repo
+              zypper clean --all
+              for attempt in 1 2 3; do
+                if zypper --non-interactive refresh --force; then break; fi
+                [ "$attempt" -lt 3 ] || exit 1
+                sleep 5
+              done
+              zypper --non-interactive install git ca-certificates curl
+              ;;
           esac
       - uses: actions/checkout@v4
       - name: Install distribution dependencies
