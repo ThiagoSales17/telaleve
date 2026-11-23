@@ -12,7 +12,7 @@ plugins_dir=$(pkg-config --variable=pluginsdir gstreamer-1.0)
 x11_plugin="$plugins_dir/libgstximagesrc.so"
 [ -r "$x11_plugin" ] || { printf 'Plugin ximagesrc não encontrado em %s; instale os plugins GStreamer de captura X11.\n' "$plugins_dir" >&2; exit 1; }
 x11_notice=''
-for candidate in /usr/share/doc/gstreamer1.0-plugins-good/copyright /usr/share/licenses/gst-plugins-good/COPYING /usr/share/licenses/gstreamer1-plugins-good/COPYING /usr/share/licenses/gstreamer-plugins-good/COPYING /usr/share/doc/packages/gstreamer-plugins-good/COPYING; do
+for candidate in /usr/share/doc/gstreamer1.0-plugins-good/copyright /usr/share/licenses/gst-plugins-good/COPYING /usr/share/licenses/gstreamer1-plugins-good/COPYING /usr/share/licenses/gstreamer-plugins-good/COPYING /usr/share/doc/packages/gstreamer-plugins-good/COPYING /usr/share/licenses/common/LGPL2.1; do
     if [ -r "$candidate" ]; then x11_notice=$candidate; break; fi
 done
 [ -n "$x11_notice" ] || { printf 'Aviso de licença do plugin ximagesrc não encontrado.\n' >&2; exit 1; }
