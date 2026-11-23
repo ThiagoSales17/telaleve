@@ -30,7 +30,7 @@
       "deb"
     ],
     "category": "Utility",
-    "shortDescription": "Compartilhar tela X11 com Android",
+    "shortDescription": "Compartilhar tela Linux com Android",
     "linux": {
       "deb": {
         "depends": [

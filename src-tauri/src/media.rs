@@ -50,7 +50,7 @@ fn capture(s: &Source, q: Quality, remote: Option<&OwnedFd>) -> Result<gst::Bin,
 // The caps probe uses physical frame dimensions rather than portal logical coordinates.
 fn normalize_portal(q: Quality) -> String {
     let (w, h, f, _, _) = q.settings();
-    format!("videoconvert ! videorate ! video/x-raw,framerate={f}/1 ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
+    format!("videoconvert ! videorate drop-only=true ! video/x-raw,framerate={f}/1 ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
 }
 fn configure_portal_scaling(bin: &gst::Bin, quality: Quality) -> Result<(), String> {
     let scale = bin
@@ -347,7 +347,7 @@ impl Media {
             .source
             .pipeline
             .bus()?
-            .pop_filtered(&[gst::MessageType::Error])
+            .pop_filtered(&[gst::MessageType::Error, gst::MessageType::Eos])
             .is_some()
         {
             return Some("A captura parou".into());
@@ -397,6 +397,32 @@ mod tests {
         assert!(
             buffer.as_slice()[(360 * 1280 + 400) * 3] < 5,
             "Uma entrada pequena foi ampliada"
+        );
+    }
+    #[test]
+    fn portal_first_live_frame_does_not_wait_for_more_desktop_damage() {
+        gst::init().unwrap();
+        let desc = format!("appsrc name=input is-live=true format=time ! video/x-raw,format=RGB,width=320,height=240,framerate=0/1 ! {} ! video/x-raw,format=RGB ! appsink name=sample sync=false", normalize_portal(Quality::Balanced));
+        let pipeline = gst::parse::launch(&desc)
+            .unwrap()
+            .downcast::<gst::Pipeline>()
+            .unwrap();
+        configure_portal_scaling(pipeline.upcast_ref(), Quality::Balanced).unwrap();
+        let input = pipeline.by_name("input").unwrap();
+        let sink = pipeline.by_name("sample").unwrap();
+        pipeline.set_state(gst::State::Playing).unwrap();
+        let mut frame = gst::Buffer::from_mut_slice(vec![255u8; 320 * 240 * 3]);
+        frame.make_mut().set_pts(gst::ClockTime::ZERO);
+        assert_eq!(
+            input.emit_by_name::<gst::FlowReturn>("push-buffer", &[&frame]),
+            gst::FlowReturn::Ok
+        );
+        let sample =
+            sink.emit_by_name::<Option<gst::Sample>>("try-pull-sample", &[&1_000_000_000u64]);
+        pipeline.set_state(gst::State::Null).unwrap();
+        assert!(
+            sample.is_some(),
+            "A captura de um desktop estático dependeu indevidamente de um segundo quadro ou EOS"
         );
     }
     #[test]
@@ -475,5 +501,16 @@ mod integration {
             .active
             .load(std::sync::atomic::Ordering::Acquire));
         assert!(media.error().is_none());
+        media
+            .source
+            .pipeline
+            .bus()
+            .unwrap()
+            .post(gst::message::Eos::builder().build())
+            .unwrap();
+        assert!(
+            media.error().is_some(),
+            "O encerramento da captura deve ser detectado também sem erro do backend"
+        );
     }
 }

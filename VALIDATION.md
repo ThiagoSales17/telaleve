@@ -73,7 +73,7 @@ Removido o botão de saída do vídeo. Na tela cheia nativa, a saída fica a car
 
 Adicionado 720p/60 FPS com bitrate inicial de 4 Mbps e máximo de 6 Mbps. Equilibrado permanece em 30 FPS por padrão. O teste nativo passou alternando vinte vezes entre monitor/janela e os perfis 30/60 FPS, conferindo as caps negociadas da captura em cada troca. Isso não comprova a taxa efetivamente exibida no Android. Seis testes Rust e os testes de tela cheia passaram. Android físico e comparação com Deskreen continuam pendentes.
 
-## 0.2.0 — compatibilidade Linux (22/11/2026)
+## 0.2.0 — compatibilidade Linux (23/11/2026)
 
 ### Implementação
 
@@ -86,12 +86,14 @@ Adicionado 720p/60 FPS com bitrate inicial de 4 Mbps e máximo de 6 Mbps. Equili
 ### Verificado localmente em Debian 13 x86_64
 
 - Cinco testes do núcleo passaram, incluindo seleção de backend e serialização de origens sem expor acesso ao portal.
-- Onze testes Rust nativos passaram, incluindo o teste de integração X11 em Xvfb, vinte trocas de captura/qualidade, preservação da origem diante de falha, ausência de ampliação de quadros pequenos e cancelamento da preparação após encerramento da sessão.
+- Treze testes Rust nativos passaram, incluindo o teste de integração X11 em Xvfb, vinte trocas de captura/qualidade, preservação da origem diante de falha, ausência de ampliação de quadros pequenos e cancelamento da preparação após encerramento da sessão.
 - O teste de integração passou novamente com RandR desabilitado, exercitando a captura do desktop completo.
-- Seis testes dos scripts Linux passaram, sem instalar pacotes: seleção de família, derivados, distribuição desconhecida, plugins ausentes, Wayland sem X11, portal ausente e captura X11 no Flatpak sem exigir portal Wayland.
+- Oito testes dos scripts Linux passaram, sem instalar pacotes: seleção de família, derivados, distribuição desconhecida, plugins ausentes, Wayland sem X11, portal ausente e captura X11 no Flatpak sem exigir portal Wayland.
 - Compilação/checagem TypeScript e suíte de tela cheia passaram. Clippy em todos os targets locais passou com avisos tratados como erro; formatação Rust e diff conferidos.
 - Build otimizado gerado. As bibliotecas dinâmicas do binário 0.2.0 foram encontradas dentro do runtime GNOME 51, sem depender das bibliotecas do host.
-- Um pacote Flatpak de teste foi exportado e validado pelo Flatpak, incluindo ícone e metadados. Esse teste do empacotador não substitui testar a aplicação com receptor real.
+- O pacote Flatpak inclui o plugin de captura X11 e seu aviso de licença. Os testes nativos foram executados dentro do runtime GNOME 51, em tela X11 virtual; o aplicativo GTK iniciou e serviu a página HTTP do visualizador. Isso não substitui testar com receptor real.
+- Um quadro único de uma origem ao vivo é entregue sem depender de novo movimento no desktop. O encerramento da captura é detectado também por EOS. Eventos SDP/ICE de capturas encerradas não são enviados para uma nova sessão.
+- Em uma sessão Wayland virtual de teste, o portal aceitou criar a sessão e selecionar a origem, mas o backend de captura recusou o formato do compositor virtual. Esse teste não concluiu a transmissão Wayland e não conta como aceite.
 
 ### Validações ainda necessárias
 

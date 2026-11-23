@@ -37,6 +37,7 @@ struct App {
     bitrate: u32,
     server_ready: bool,
     revision: u64,
+    media_id: u64,
 }
 impl App {
     fn new(tx: broadcast::Sender<String>) -> Self {
@@ -54,6 +55,7 @@ impl App {
             bitrate: 2_500_000,
             server_ready: false,
             revision: 0,
+            media_id: 0,
         }
     }
     fn may_stream(&self, revision: u64) -> bool {
@@ -63,6 +65,7 @@ impl App {
     }
     fn stop(&mut self) {
         self.revision = self.revision.wrapping_add(1);
+        self.media_id = self.media_id.wrapping_add(1);
         self.media = None;
         self.source = None;
         self.access = None;
@@ -75,7 +78,7 @@ impl App {
 }
 
 async fn start_media(state: &Shared) -> Result<(), String> {
-    let (source, quality, offer, tx, revision) = {
+    let (source, quality, offer, revision, media_id) = {
         let mut app = state
             .lock()
             .map_err(|_| "Estado do aplicativo indisponível")?;
@@ -86,7 +89,8 @@ async fn start_media(state: &Shared) -> Result<(), String> {
         let offer = app.offer.clone().ok_or("Aguardando oferta do celular")?;
         app.media = None;
         app.revision = app.revision.wrapping_add(1);
-        (source, app.quality, offer, app.tx.clone(), app.revision)
+        app.media_id = app.media_id.wrapping_add(1);
+        (source, app.quality, offer, app.revision, app.media_id)
     };
     let remote = portal::open_remote(&source).await?;
     if !state
@@ -96,6 +100,8 @@ async fn start_media(state: &Shared) -> Result<(), String> {
     {
         return Ok(());
     }
+    // Keep SDP/ICE private until this prepared capture belongs to the active session.
+    let (tx, mut events) = broadcast::channel(128);
     let media = tauri::async_runtime::spawn_blocking(move || {
         media::Media::new(&source, quality, &offer, tx, remote)
     })
@@ -113,7 +119,34 @@ async fn start_media(state: &Shared) -> Result<(), String> {
     }
     app.media = Some(media);
     app.status = "conectando".into();
+    drop(app);
+    let weak = Arc::downgrade(state);
+    tauri::async_runtime::spawn(async move {
+        loop {
+            match events.recv().await {
+                Ok(event) => {
+                    let Some(state) = weak.upgrade() else {
+                        break;
+                    };
+                    forward_media_event(&state, media_id, event);
+                }
+                Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    });
     Ok(())
+}
+
+fn forward_media_event(state: &Shared, media_id: u64, event: String) {
+    if let Ok(app) = state.lock() {
+        if app.media_id == media_id
+            && app.approved
+            && app.access.as_ref().is_some_and(|access| access.connected)
+        {
+            let _ = app.tx.send(event);
+        }
+    }
 }
 
 async fn resolve_source(
@@ -409,6 +442,7 @@ async fn socket(mut socket: WebSocket, a: Shared) {
         return;
     }
     app.revision = app.revision.wrapping_add(1);
+    app.media_id = app.media_id.wrapping_add(1);
     if let Some(access) = app.access.as_mut() {
         access.connected = false;
         access.disconnected = Some(Instant::now());
@@ -526,6 +560,7 @@ fn main() {
                     let err = a.media.as_ref().and_then(|m| m.error());
                     if lost || err.is_some() {
                         a.revision = a.revision.wrapping_add(1);
+                        a.media_id = a.media_id.wrapping_add(1);
                         a.media = None;
                         a.status = "origem_perdida".into();
                         let _ = a.tx.send(json!({"type":"source_lost"}).to_string());
@@ -596,6 +631,34 @@ mod streaming_access_tests {
         app.access = Some(access);
         app.offer = Some("Oferta de teste".into());
         Arc::new(Mutex::new(app))
+    }
+    #[test]
+    fn media_events_stay_with_the_approved_capture_across_session_changes() {
+        let state = prepared_state(Arc::new(PendingRemote::default()));
+        let mut viewer = state.lock().unwrap().tx.subscribe();
+        let capture_id = state.lock().unwrap().media_id;
+        forward_media_event(&state, capture_id, "unapproved".into());
+        assert!(viewer.try_recv().is_err());
+        state.lock().unwrap().approved = true;
+        forward_media_event(&state, capture_id, "active".into());
+        assert_eq!(viewer.try_recv().unwrap(), "active");
+        state.lock().unwrap().revision += 1;
+        forward_media_event(&state, capture_id, "after-quality-change".into());
+        assert_eq!(viewer.try_recv().unwrap(), "after-quality-change");
+        {
+            let mut app = state.lock().unwrap();
+            app.stop();
+            let mut access = Access::new();
+            access.connected = true;
+            app.access = Some(access);
+            app.approved = true;
+        }
+        assert!(viewer.try_recv().unwrap().contains("ended"));
+        forward_media_event(&state, capture_id, "previous-session".into());
+        assert!(
+            viewer.try_recv().is_err(),
+            "Uma captura antiga enviou sinalização para a nova sessão"
+        );
     }
     #[tokio::test]
     async fn unapproved_receiver_cannot_open_a_capture() {
