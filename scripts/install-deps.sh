@@ -37,9 +37,9 @@ case "$family" in
         run pacman -S --needed --noconfirm base-devel pkgconf curl python nodejs npm gtk3 webkit2gtk-4.1 librsvg openssl libx11 xdotool gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad libnice gst-plugin-pipewire xdg-desktop-portal
         ;;
     suse)
-        run zypper --non-interactive install gcc gcc-c++ make pkg-config curl python3 nodejs npm gtk3-devel webkit2gtk3-soup3-devel librsvg-devel libopenssl-devel libX11-devel libxdo-devel gstreamer-devel gstreamer-plugins-base-devel gstreamer-plugins-bad-devel gstreamer-plugins-base gstreamer-plugins-good gstreamer-plugins-bad gstreamer-libnice gstreamer-plugin-pipewire xdg-desktop-portal
+        run zypper --non-interactive install gcc gcc-c++ make pkg-config curl python3 nodejs npm gtk3-devel webkit2gtk3-devel librsvg-devel libopenssl-devel libX11-devel gstreamer-devel gstreamer-plugins-base-devel gstreamer-plugins-bad-devel gstreamer-plugins-base gstreamer-plugins-good gstreamer-plugins-bad gstreamer-libnice gstreamer-plugin-pipewire xdg-desktop-portal
         ;;
     *) printf 'Use o pacote Flatpak ou prepare as dependências descritas em LINUX.md para %s.\n' "${ID:-este sistema}" >&2; exit 1 ;;
 esac
-printf '\nPara Wayland/Flatpak, habilite o backend ScreenCast do seu desktop (GNOME, KDE, wlr ou Hyprland); veja LINUX.md.\n'
+printf '\nPara Wayland, habilite o backend ScreenCast do seu desktop (GNOME, KDE, wlr ou Hyprland); veja LINUX.md.\n'
 printf 'Rust estável deve estar instalado. Verifique o ambiente com ./scripts/diagnose.sh.\n'

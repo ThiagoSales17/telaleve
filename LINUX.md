@@ -74,7 +74,7 @@ cargo build --release --locked --manifest-path src-tauri/Cargo.toml
 ./scripts/package-flatpak.sh
 ```
 
-O empacotador Flatpak usa o binário nativo e o runtime GNOME 51; não recompila o código dentro de um SDK. O binário precisa ser compatível com as bibliotecas desse runtime. Antes de distribuir, teste o pacote em uma instalação limpa. Para builds reproduzíveis no runtime, use o SDK GNOME da mesma versão e as ferramentas oficiais de empacotamento Tauri/Flatpak.
+O empacotador Flatpak usa o binário nativo, inclui o plugin `ximagesrc` e seu aviso de licença do sistema de build, e usa o runtime GNOME 51; não recompila o código dentro de um SDK. O ambiente de empacotamento precisa de `pkg-config` e dos plugins GStreamer de captura X11. O binário precisa ser compatível com as bibliotecas desse runtime. Antes de distribuir, teste o pacote em uma instalação limpa. Para builds reproduzíveis no runtime, use o SDK GNOME da mesma versão e as ferramentas oficiais de empacotamento Tauri/Flatpak.
 
 Para um `.deb` da arquitetura local em Debian/Ubuntu:
 
