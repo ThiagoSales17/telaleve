@@ -335,7 +335,30 @@ impl Media {
         q: Quality,
         remote: Option<OwnedFd>,
     ) -> Result<(), String> {
-        let next = SourceStream::prepare(s, q, &self.frames, remote)?;
+        // ximagesrc grabs the X server while reading a frame. Opening another Xlib
+        // display concurrently can deadlock against libXext's global display lock.
+        // Stop the old X11 reader before opening the next; retain it for rollback.
+        let restart_x11 = self.source._origin.pipewire.is_none();
+        if restart_x11 {
+            self.source.deactivate();
+            self.source
+                .pipeline
+                .set_state(gst::State::Ready)
+                .map_err(|e| e.to_string())?;
+        }
+        let next = match SourceStream::prepare(s, q, &self.frames, remote) {
+            Ok(next) => next,
+            Err(error) => {
+                if restart_x11 {
+                    self.source.activate();
+                    self.source
+                        .pipeline
+                        .set_state(gst::State::Playing)
+                        .map_err(|e| format!("{error}; falha ao retomar a origem anterior: {e}"))?;
+                }
+                return Err(error);
+            }
+        };
         self.source.deactivate();
         let old = std::mem::replace(&mut self.source, next);
         drop(old);
@@ -500,6 +523,13 @@ mod integration {
             .source
             .active
             .load(std::sync::atomic::Ordering::Acquire));
+        let (result, state, _) = media.source.pipeline.state(gst::ClockTime::from_seconds(3));
+        assert!(result.is_ok());
+        assert_eq!(
+            state,
+            gst::State::Playing,
+            "A origem anterior não foi retomada"
+        );
         assert!(media.error().is_none());
         media
             .source
