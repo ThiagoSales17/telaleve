@@ -50,7 +50,7 @@ fn capture(s: &Source, q: Quality, remote: Option<&OwnedFd>) -> Result<gst::Bin,
 // The caps probe uses physical frame dimensions rather than portal logical coordinates.
 fn normalize_portal(q: Quality) -> String {
     let (w, h, f, _, _) = q.settings();
-    format!("videoconvert ! videorate drop-only=true ! video/x-raw,framerate={f}/1 ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
+    format!("videoconvert ! videorate drop-only=true max-rate={f} ! videoscale name=portal-scale ! capsfilter name=portal-size ! videobox autocrop=true ! video/x-raw,width={w},height={h} ! identity")
 }
 fn configure_portal_scaling(bin: &gst::Bin, quality: Quality) -> Result<(), String> {
     let scale = bin

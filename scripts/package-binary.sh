@@ -8,8 +8,9 @@ version=$(python3 -c 'import json; print(json.load(open("package.json"))["versio
 architecture=$(dpkg --print-architecture)
 package_dir=$(mktemp -d)
 trap 'rm -rf "$package_dir"' EXIT HUP INT TERM
-mkdir -p "$package_dir/DEBIAN" "$package_dir/usr/bin" "$package_dir/usr/share/applications" "$package_dir/usr/share/icons/hicolor/256x256/apps"
+mkdir -p "$package_dir/DEBIAN" "$package_dir/usr/bin" "$package_dir/usr/share/applications" "$package_dir/usr/share/icons/hicolor/256x256/apps" "$package_dir/usr/share/doc/telaleve"
 install -m755 "$binary" "$package_dir/usr/bin/telaleve"
+install -m644 LICENSE "$package_dir/usr/share/doc/telaleve/copyright"
 install -m644 src-tauri/icons/icon.png "$package_dir/usr/share/icons/hicolor/256x256/apps/telaleve.png"
 cat > "$package_dir/DEBIAN/control" <<CONTROL
 Package: telaleve
