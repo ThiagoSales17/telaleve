@@ -56,4 +56,4 @@ mkdir -p dist
 output="dist/TelaLeve-$version-$arch.flatpak"
 flatpak build-bundle --arch="$arch" --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo "$build_dir/repo" "$output" "$app_id" "$branch"
 printf '\nPacote: %s\nInstale com: flatpak install --user %s\n' "$output" "$output"
-printf 'O pacote usa o runtime GNOME 51; em Wayland, também é necessário o portal ScreenCast. Veja LINUX.md.\n'
+printf 'O pacote usa o runtime GNOME 51; em Wayland, também é necessário o portal ScreenCast. Veja docs/LINUX.md.\n'

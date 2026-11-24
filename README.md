@@ -47,7 +47,7 @@ flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
 flatpak run io.github.ThiagoSales17.TelaLeve
 ```
 
-O pacote utiliza o runtime GNOME 51. Consulte [LINUX.md](LINUX.md) para requisitos e instruções adicionais.
+O pacote utiliza o runtime GNOME 51. Consulte [LINUX.md](docs/LINUX.md) para requisitos e instruções adicionais.
 
 ### Debian / Ubuntu (.deb)
 
@@ -117,7 +117,7 @@ A resolução e a taxa de quadros efetivas dependem da origem, do hardware, da r
 | x86_64 / ARM64 | Pacotes disponíveis |
 | Android | Receptor via Chrome ou Demais Navegadores |
 
-O suporte implementado não implica validação em todas as distribuições, arquiteturas e compositores. Consulte [LINUX.md](LINUX.md) para requisitos específicos.
+O suporte implementado não implica validação em todas as distribuições, arquiteturas e compositores. Consulte [LINUX.md](docs/LINUX.md) para requisitos específicos.
 
 O escopo atual é a transmissão de vídeo para um único receptor. Áudio, controle remoto, monitor virtual e acesso pela internet não fazem parte desta versão.
 
@@ -136,13 +136,13 @@ O escopo atual é a transmissão de vídeo para um único receptor. Áudio, cont
 Após instalar as dependências do projeto:
 
 ```bash
-cargo test --manifest-path core-tests/Cargo.toml
+cargo test --manifest-path tests/core/Cargo.toml
 npm run check
 npm run build:web
 npm test
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
-python3 tests/linux-scripts.test.py
+python3 tests/linux/scripts.test.py
 ```
 
 O teste nativo de integração exige uma sessão X11 acessível e os plugins GStreamer:
@@ -153,7 +153,7 @@ cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored
 
 Há verificações automatizadas e testes nativos registrados, incluindo captura X11. A validação completa em Wayland, Android físico, sessões prolongadas e instalações em sistemas limpos permanece pendente.
 
-Consulte [VALIDATION.md](VALIDATION.md) para resultados e critérios de aceite.
+Consulte [VALIDATION.md](docs/VALIDATION.md) para resultados e critérios de aceite.
 
 ## Roadmap
 
@@ -164,9 +164,9 @@ Consulte [VALIDATION.md](VALIDATION.md) para resultados e critérios de aceite.
 
 | Documento | Conteúdo |
 | :-- | :-- |
-| [LINUX.md](LINUX.md) | Compatibilidade, dependências e empacotamento |
-| [VALIDATION.md](VALIDATION.md) | Testes, resultados e critérios de validação |
-| [HISTORY.md](HISTORY.md) | Histórico de desenvolvimento |
+| [LINUX.md](docs/LINUX.md) | Compatibilidade, dependências e empacotamento |
+| [VALIDATION.md](docs/VALIDATION.md) | Testes, resultados e critérios de validação |
+| [HISTORY.md](docs/HISTORY.md) | Histórico de desenvolvimento |
 | [Releases](https://github.com/ThiagoSales17/telaleve/releases) | Instaladores e versões disponíveis |
 
 ## Licença
@@ -179,6 +179,6 @@ Distribuído sob a licença [MIT](LICENSE). Componentes de terceiros mantêm sua
 
 **TelaLeve** · Rust + Tauri + GStreamer + WebRTC
 
-[Downloads](https://github.com/ThiagoSales17/telaleve/releases) · [Documentação](LINUX.md) · [Validação](VALIDATION.md)
+[Downloads](https://github.com/ThiagoSales17/telaleve/releases) · [Documentação](docs/LINUX.md) · [Validação](docs/VALIDATION.md)
 
 </div>

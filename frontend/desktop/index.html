@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>TelaLeve</title
+  ><link rel="stylesheet" href="style.css" />
+  <script type="module" src="desktop/main.js"></script>
+  <body>
+    <main>
+      <header>
+        <span>LINUX → ANDROID</span>
+        <h1>TelaLeve<span class="dot">.</span></h1>
+        <p>Sua tela, mais perto.</p>
+      </header>
+      <div id="error" role="alert" hidden></div>
+      <section>
+        <h2>01 · O que compartilhar</h2>
+        <label>Tela ou janela<select id="source"></select></label
+        ><button id="refresh" class="secondary">Atualizar origens</button>
+        <div class="row">
+          <label>Rede local<select id="network"></select></label
+          ><label
+            >Qualidade<select id="quality">
+              <option value="economy">Econômico · 720p / 20</option>
+              <option value="balanced" selected>Equilibrado · 720p / 30</option>
+              <option value="smooth">Fluidez · 720p / 60 FPS</option>
+              <option value="sharp">Nitidez · 1080p / 30</option>
+            </select></label
+          >
+        </div>
+        <div class="row">
+          <button id="begin">Gerar conexão</button
+          ><button id="switch" class="secondary">Aplicar tela e qualidade</button>
+        </div>
+      </section>
+      <section>
+        <h2>02 · Conectar celular</h2>
+        <p>Abra a câmera do Android, leia o QR code e aprove a conexão aqui.</p>
+        <div id="pair" hidden>
+          <div id="qr"></div>
+          <a id="url"></a><small>Uso único · expira em cinco minutos</small>
+        </div>
+        <div id="pending" hidden>
+          <p>Um dispositivo está pedindo acesso à sua tela.</p>
+          <button id="approve">Aprovar</button>
+          <button id="deny" class="secondary">Recusar</button>
+        </div>
+        <div class="status">
+          <span id="status" role="status">Encerrado</span><small id="metrics"></small>
+        </div>
+        <button id="end" class="danger">Encerrar compartilhamento</button>
+      </section>
+      <footer>Uma conexão local. Sem áudio. Sem controle remoto.</footer>
+    </main>
+  </body>
+</html>

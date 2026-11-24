@@ -6,6 +6,14 @@ build/
 *.AppImage
 *.deb
 __pycache__/
+*.py[cod]
+*.log
+.DS_Store
+Thumbs.db
 .env
 .env.*
 !.env.example
+
+*.tmp
+*.flatpak
+*.tsbuildinfo

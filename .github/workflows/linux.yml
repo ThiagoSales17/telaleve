@@ -38,14 +38,15 @@ jobs:
         run: |
           npm ci
           npm run check
+          npm run format:check
           npm run build:web
           npm test
-          python3 tests/linux-scripts.test.py
+          python3 tests/linux/scripts.test.py
           git diff --exit-code -- web/
       - name: Check Rust and tests
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
-          cargo test --locked --manifest-path core-tests/Cargo.toml
+          cargo test --locked --manifest-path tests/core/Cargo.toml
           cargo test --locked --manifest-path src-tauri/Cargo.toml
           cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
       - name: Exercise X11 capture
@@ -100,7 +101,8 @@ jobs:
         run: |
           npm ci
           npm run check
+          npm run format:check
           npm run build:web
           npm test
-          python3 tests/linux-scripts.test.py
+          python3 tests/linux/scripts.test.py
           cargo test --locked --manifest-path src-tauri/Cargo.toml
