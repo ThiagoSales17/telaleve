@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate versions and tag
         run: python3 scripts/release-metadata.py
       - uses: actions/setup-node@v4
@@ -94,7 +94,7 @@ jobs:
       contents: write
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: version
         run: python3 scripts/release-metadata.py
       - name: Identify automatic preview

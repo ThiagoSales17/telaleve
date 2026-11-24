@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -84,7 +84,7 @@ jobs:
               zypper --non-interactive install git ca-certificates curl
               ;;
           esac
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install distribution dependencies
         run: ./scripts/install-deps.sh
       - uses: actions/setup-node@v4
