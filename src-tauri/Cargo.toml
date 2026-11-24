@@ -14,7 +14,7 @@ futures-util = "0.3"
 gstreamer = { version = "0.24", features = ["v1_20"] }
 gstreamer-webrtc = "0.24"
 gstreamer-sdp = "0.24"
-x11rb = { version = "0.13", features = ["randr"] }
+x11rb = { version = "0.14", features = ["randr"] }
 uuid = { version = "1", features = ["v4"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 if-addrs = "0.14"
