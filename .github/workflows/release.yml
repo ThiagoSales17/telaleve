@@ -1,6 +1,7 @@
 name: Release
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 permissions:
@@ -85,7 +86,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   publish:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-24.04
     permissions:
@@ -95,6 +96,19 @@ jobs:
       - uses: actions/checkout@v4
       - id: version
         run: python3 scripts/release-metadata.py
+      - name: Identify automatic preview
+        id: release
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.tag }}
+          VERSION_PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            echo "tag=dev-$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$VERSION_TAG" >> "$GITHUB_OUTPUT"
+            echo "prerelease=$VERSION_PRERELEASE" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/download-artifact@v4
         with:
           pattern: telaleve-*
@@ -111,8 +125,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: ${{ steps.version.outputs.tag }}
-          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
         shell: bash
         run: |
           set -euo pipefail
@@ -123,12 +137,20 @@ jobs:
 
           Verifique a integridade dos downloads usando o arquivo SHA256SUMS.
           NOTES
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            printf '\nPrévia automática do commit `%s`. Os pacotes mantêm a versão-base do projeto; a tag dev identifica este build.\n' "$GITHUB_SHA" >> /tmp/release-notes.md
+          fi
           if gh release view "$TAG" --json isDraft > /tmp/release.json; then
             test "$(jq -r .isDraft /tmp/release.json)" = true || { echo 'Release já publicada; use uma nova versão.'; exit 1; }
             gh release upload "$TAG" --clobber dist/*
             gh release edit "$TAG" --notes-file /tmp/release-notes.md --prerelease="$PRERELEASE" --draft=false
           else
-            args=(--verify-tag --draft --generate-notes --title "TelaLeve ${TAG#v}" --notes-file /tmp/release-notes.md)
+            args=(--draft --generate-notes --title "TelaLeve ${TAG#v}" --notes-file /tmp/release-notes.md)
+            if [ "$GITHUB_REF_TYPE" = branch ]; then
+              args+=(--target "$GITHUB_SHA")
+            else
+              args+=(--verify-tag)
+            fi
             if [ "$PRERELEASE" = true ]; then args+=(--prerelease); fi
             gh release create "$TAG" "${args[@]}" dist/*
             gh release edit "$TAG" --draft=false
