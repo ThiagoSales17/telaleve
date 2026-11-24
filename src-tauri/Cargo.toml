@@ -17,7 +17,7 @@ gstreamer-sdp = "0.24"
 x11rb = { version = "0.13", features = ["randr"] }
 uuid = { version = "1", features = ["v4"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
-if-addrs = "0.14"
+if-addrs = "0.15"
 ashpd = { version = "0.11", default-features = false, features = ["tokio"] }
 [profile.release]
 opt-level = 2
