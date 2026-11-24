@@ -80,7 +80,7 @@ jobs:
           dpkg-deb --info dist/*.deb
           cd dist
           sha256sum *.deb *.flatpak > SHA256SUMS-${{ matrix.arch }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: telaleve-${{ matrix.arch }}
           path: dist/*
