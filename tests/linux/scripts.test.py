@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 class LinuxScripts(unittest.TestCase):
     def test_distribution_families_and_derivatives(self):

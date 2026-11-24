@@ -1,3 +1,11 @@
+---
+name: Sugerir melhoria
+about: Propor uma funcionalidade ou melhoria
+title: "[Melhoria] "
+labels: ""
+assignees: ""
+---
+
 # Solicitação de funcionalidade
 
 ## Problema ou necessidade

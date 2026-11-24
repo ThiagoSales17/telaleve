@@ -1,3 +1,11 @@
+---
+name: Relatar um bug
+about: Descrever um problema reproduzível no TelaLeve
+title: "[Bug] "
+labels: ""
+assignees: ""
+---
+
 # Relato de bug
 
 ## Descrição

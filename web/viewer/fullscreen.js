@@ -22,7 +22,9 @@ export function setupFullscreen(stage, enter) {
                     await doc.webkitExitFullscreen();
             }
         }
-        catch { /* The browser may already have exited fullscreen. */ }
+        catch {
+            /* The browser may already have exited fullscreen. */
+        }
         update();
     }
     function expandViewport() {
@@ -50,13 +52,15 @@ export function setupFullscreen(stage, enter) {
         update();
     }
     enter.onclick = toggle;
-    win.addEventListener('popstate', event => {
+    win.addEventListener('popstate', (event) => {
         expanded = event.state?.telaleveExpanded === true;
         update();
     });
     doc.addEventListener('fullscreenchange', update);
     doc.addEventListener('webkitfullscreenchange', update);
-    doc.addEventListener('keydown', event => { if (event.key === 'Escape' && expanded)
-        void leave(); });
+    doc.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && expanded)
+            void leave();
+    });
     update();
 }

@@ -4,14 +4,13 @@ mod media;
 mod model;
 mod platform;
 mod portal;
+mod server;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         State,
     },
-    response::{Html, IntoResponse},
-    routing::get,
-    Router,
+    response::IntoResponse,
 };
 use futures_util::{SinkExt, StreamExt};
 use model::{Access, Quality, Source};
@@ -480,40 +479,7 @@ fn main() {
         })
         .setup(move |_| {
             tauri::async_runtime::spawn(async move {
-                let router = Router::new()
-                    .route(
-                        "/",
-                        get(|| async { Html(include_str!("../../web/viewer.html")) }),
-                    )
-                    .route(
-                        "/viewer.js",
-                        get(|| async {
-                            (
-                                [("content-type", "text/javascript")],
-                                include_str!("../../web/viewer.js"),
-                            )
-                        }),
-                    )
-                    .route(
-                        "/fullscreen.js",
-                        get(|| async {
-                            (
-                                [("content-type", "text/javascript")],
-                                include_str!("../../web/fullscreen.js"),
-                            )
-                        }),
-                    )
-                    .route(
-                        "/style.css",
-                        get(|| async {
-                            (
-                                [("content-type", "text/css")],
-                                include_str!("../../web/style.css"),
-                            )
-                        }),
-                    )
-                    .route("/ws", get(upgrade))
-                    .with_state(server.clone());
+                let router = server::router(server.clone());
                 match tokio::net::TcpListener::bind("0.0.0.0:9876").await {
                     Ok(listener) => {
                         server.lock().unwrap().server_ready = true;

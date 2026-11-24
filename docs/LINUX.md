@@ -89,11 +89,11 @@ O empacotador manual de AppImage em `scripts/package-appimage.py` continua espec
 ## Verificações
 
 ```sh
-python3 tests/linux-scripts.test.py
+python3 tests/linux/scripts.test.py
 npm run check
 npm run build:web
 npm test
-cargo test --manifest-path core-tests/Cargo.toml
+cargo test --manifest-path tests/core/Cargo.toml
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```

@@ -60,15 +60,16 @@ jobs:
         run: |
           npm ci
           npm run check
+          npm run format:check
           npm run build:web
           npm test
-          python3 tests/linux-scripts.test.py
-          python3 tests/release-metadata.test.py
+          python3 tests/linux/scripts.test.py
+          python3 tests/release/metadata.test.py
           git diff --exit-code -- web/
       - name: Test native application
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
-          cargo test --locked --manifest-path core-tests/Cargo.toml
+          cargo test --locked --manifest-path tests/core/Cargo.toml
           cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
           xvfb-run -a env XDG_SESSION_TYPE=x11 cargo test --locked --manifest-path src-tauri/Cargo.toml -- --include-ignored
       - name: Build and package
@@ -133,7 +134,7 @@ jobs:
           cat > /tmp/release-notes.md <<'NOTES'
           Pacotes Linux gerados automaticamente pelo GitHub Actions para x86_64 e ARM64.
 
-          Prefira o Flatpak para diferentes distribuições; os pacotes Debian foram compilados em Ubuntu 24.04. Consulte README.md, LINUX.md e VALIDATION.md para requisitos e limites. A validação automática não substitui os testes com Wayland real e Android físico.
+          Prefira o Flatpak para diferentes distribuições; os pacotes Debian foram compilados em Ubuntu 24.04. Consulte README.md, docs/LINUX.md e docs/VALIDATION.md para requisitos e limites. A validação automática não substitui os testes com Wayland real e Android físico.
 
           Verifique a integridade dos downloads usando o arquivo SHA256SUMS.
           NOTES

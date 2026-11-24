@@ -11,17 +11,19 @@ Transmissão de monitor ou janela do **Linux (X11 ou Wayland)** para o **Chrome 
 <br />
 
 ![Status](https://img.shields.io/badge/status-valida%C3%A7%C3%A3o%20parcial-e3b341?style=flat-square)
+[![CI Linux](https://github.com/ThiagoSales17/telaleve/actions/workflows/linux.yml/badge.svg)](https://github.com/ThiagoSales17/telaleve/actions/workflows/linux.yml)
+[![Release](https://github.com/ThiagoSales17/telaleve/actions/workflows/release.yml/badge.svg)](https://github.com/ThiagoSales17/telaleve/actions/workflows/release.yml)
 ![Linux](https://img.shields.io/badge/plataforma-Linux%20%7C%20X11%20%2F%20Wayland-333333?style=flat-square&logo=linux&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Tauri%202-B7410E?style=flat-square&logo=rust&logoColor=white)
 ![WebRTC](https://img.shields.io/badge/streaming-WebRTC-2563EB?style=flat-square)
 ![Android](https://img.shields.io/badge/receptor-Chrome%20Android-188038?style=flat-square&logo=googlechrome&logoColor=white)
 
-[**Começar**](#-comece-em-poucos-passos) · [**Como funciona**](#-como-funciona) · [**Downloads**](#-instalação-e-pacotes) · [**Validação**](VALIDATION.md)
+[**Começar**](#-comece-em-poucos-passos) · [**Como funciona**](#-como-funciona) · [**Downloads**](#-instalação-e-pacotes) · [**Validação**](docs/VALIDATION.md)
 
 </div>
 
 > [!NOTE]
-> **Em desenvolvimento — validação parcial.** Há verificações automatizadas e testes nativos registrados em [VALIDATION.md](VALIDATION.md). A validação em Android físico, a transmissão contínua de 30 minutos e a instalação em Debian limpo continuam pendentes.
+> **Em desenvolvimento — validação parcial.** Há verificações automatizadas e testes nativos registrados em [docs/VALIDATION.md](docs/VALIDATION.md). A validação em Android físico, a transmissão contínua de 30 minutos e a instalação em Debian limpo continuam pendentes.
 
 ---
 
@@ -43,7 +45,7 @@ O **TelaLeve** permite compartilhar a imagem de um monitor ou de uma janela do d
 
 A versão **0.2.0** adiciona captura por **portal/PipeWire** para Wayland, inclusive em Flatpak. O instalador de dependências reconhece as famílias **Debian/Ubuntu, Fedora, Arch e openSUSE**. O empacotador Flatpak aceita **x86_64 e ARM64**, com um binário nativo para cada arquitetura.
 
-Consulte [LINUX.md](LINUX.md) para instalação, requisitos do desktop, geração do Flatpak e limites de compatibilidade. A presença de uma implementação não comprova que toda combinação de distribuição, versão, arquitetura e compositor foi testada. A seleção real em Wayland e a experiência no Android continuam no roteiro de validação.
+Consulte [docs/LINUX.md](docs/LINUX.md) para instalação, requisitos do desktop, geração do Flatpak e limites de compatibilidade. A presença de uma implementação não comprova que toda combinação de distribuição, versão, arquitetura e compositor foi testada. A seleção real em Wayland e a experiência no Android continuam no roteiro de validação.
 
 ## 🚀 Comece em poucos passos
 
@@ -51,7 +53,7 @@ Consulte [LINUX.md](LINUX.md) para instalação, requisitos do desktop, geraçã
 
 Para usar um pacote pronto em diferentes distribuições, consulte a seção de **Flatpak** abaixo. Para desenvolver pelo código-fonte, tenha **Rust estável**, Node.js/npm, GTK 3, **WebKitGTK 4.1** e **GStreamer 1.20 ou superior**. O script de dependências detecta a família da distribuição. Privilégios de administrador são necessários para instalar dependências do sistema.
 
-Em **X11**, a origem é escolhida na lista do aplicativo. Em **Wayland**, configure PipeWire e um backend ScreenCast de `xdg-desktop-portal` compatível com o desktop, conforme [LINUX.md](LINUX.md).
+Em **X11**, a origem é escolhida na lista do aplicativo. Em **Wayland**, configure PipeWire e um backend ScreenCast de `xdg-desktop-portal` compatível com o desktop, conforme [docs/LINUX.md](docs/LINUX.md).
 
 Execute os comandos a seguir na **raiz do projeto**, onde está o arquivo `package.json`:
 
@@ -132,7 +134,7 @@ flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
 flatpak run io.github.ThiagoSales17.TelaLeve
 ```
 
-O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [LINUX.md](LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Há instaladores x86_64 e ARM64 na release. Um clone Git não contém os instaladores.
+O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [docs/LINUX.md](docs/LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Há instaladores x86_64 e ARM64 na release. Um clone Git não contém os instaladores.
 
 ### Pacote Debian (`.deb`)
 
@@ -161,7 +163,7 @@ Os binários e a pasta `dist/` **não acompanham um clone Git**. Para instalar u
 
 ### AppImage legado
 
-O arquivo **`TelaLeve-0.1.3-x86_64.AppImage`** é o artefato anterior, voltado a **Debian 13, x86_64 e X11**. Ele não contém as mudanças da versão 0.2.0. Consulte [APPIMAGE.md](APPIMAGE.md) para execução e alternativa sem FUSE. O empacotador manual de AppImage continua específico desse ambiente; o Flatpak é o caminho para ampliar a distribuição.
+O arquivo **`TelaLeve-0.1.3-x86_64.AppImage`** é o artefato anterior, voltado a **Debian 13, x86_64 e X11**. Ele não contém as mudanças da versão 0.2.0. Consulte [docs/APPIMAGE.md](docs/APPIMAGE.md) para execução e alternativa sem FUSE. O empacotador manual de AppImage continua específico desse ambiente; o Flatpak é o caminho para ampliar a distribuição.
 
 ### Releases
 
@@ -171,34 +173,37 @@ Os instaladores podem ser obtidos nas [**Releases do TelaLeve**](https://github.
 
 ```text
 TelaLeve/
-├── src-tauri/src/    # Desktop, servidor, acesso, X11 e pipeline
-├── frontend/         # Fontes TypeScript
-├── web/              # HTML, CSS e JavaScript gerado
-├── core-tests/       # Testes do modelo de acesso, sem GTK/GStreamer
-├── scripts/          # Dependências, diagnóstico, build e medição
-├── LINUX.md          # Compatibilidade, Wayland e Flatpak
-├── VALIDATION.md     # Checklist de validação
-├── APPIMAGE.md       # Uso e validação do AppImage
-└── HISTORY.md        # Histórico retrospectivo de commits
+├── frontend/
+│   ├── desktop/       # Controle do emissor e bridge Tauri
+│   ├── viewer/        # Receptor WebRTC e tela cheia
+│   └── styles/        # Tema compartilhado
+├── web/               # HTML, CSS e JS gerados por build:web
+├── src-tauri/src/      # Sessão, servidor, captura e mídia Rust
+├── tests/             # frontend/, linux/, release/ e core/
+├── scripts/           # Build, diagnóstico e empacotamento
+├── docs/              # Guias, arquitetura, validação e imagens
+├── .github/           # CI, releases, templates e Dependabot
+├── CONTRIBUTING.md    # Como preparar e contribuir
+└── SECURITY.md        # Política de segurança
 ```
 
-Os binários, caches e dependências **não são versionados** no Git.
+Edite a interface em `frontend/` e execute `npm run build:web` para atualizar `web/`. O diretório gerado é versionado para a compilação Rust e conferido pelo CI. Binários, caches e dependências **não são versionados**. Consulte o [guia da arquitetura](docs/architecture.md) e o [mapa dos testes](tests/README.md).
 
 ## 🧪 Testes e validação
 
 Depois de preparar o ambiente e instalar as dependências npm, execute na raiz do projeto:
 
 ```bash
-cargo test --manifest-path core-tests/Cargo.toml
+cargo test --manifest-path tests/core/Cargo.toml
 npm run check
 npm run build:web
 npm test
 cargo test --manifest-path src-tauri/Cargo.toml
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
-python3 tests/linux-scripts.test.py
+python3 tests/linux/scripts.test.py
 ```
 
-Os testes de `core-tests` exercitam o mesmo modelo de acesso sem precisar inicializar GTK ou GStreamer. `npm test` executa os testes de tela cheia sobre o JavaScript gerado por `npm run build:web`.
+Os testes de `tests/core` exercitam o mesmo modelo de acesso sem precisar inicializar GTK ou GStreamer. `npm test` executa os testes de tela cheia sobre o JavaScript gerado por `npm run build:web`.
 
 O teste nativo de integração é **ignorado por padrão** porque exige uma sessão X11 acessível e os plugins GStreamer. Para executá-lo explicitamente no computador alvo:
 
@@ -206,7 +211,7 @@ O teste nativo de integração é **ignorado por padrão** porque exige uma sess
 cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored
 ```
 
-Essas verificações não substituem os testes com um receptor real. A seleção e transmissão reais por **Wayland/portal**, a experiência em **Android físico**, a sessão contínua de **30 minutos** e a instalação em sistemas limpos continuam pendentes. Os testes de pipeline não substituem essas verificações. Consulte [VALIDATION.md](VALIDATION.md) para os resultados registrados e o roteiro manual de aceite.
+Essas verificações não substituem os testes com um receptor real. A seleção e transmissão reais por **Wayland/portal**, a experiência em **Android físico**, a sessão contínua de **30 minutos** e a instalação em sistemas limpos continuam pendentes. Os testes de pipeline não substituem essas verificações. Consulte [docs/VALIDATION.md](docs/VALIDATION.md) para os resultados registrados e o roteiro manual de aceite.
 
 ### Medir o consumo de recursos
 
@@ -265,7 +270,11 @@ A compatibilidade será validada por **ambientes representativos**, cobrindo dep
 - [ ] Gerar e validar um Flatpak ARM64 em equipamento real; o teste de build ARM64 não substitui esse aceite.
 - [x] Publicar a [prévia 0.2.0](https://github.com/ThiagoSales17/telaleve/releases/tag/v0.2.0) com instaladores x86_64/ARM64, checksums e resultados de validação.
 
-**Ponto de pausa: 23/11/2026.** Atividades encerradas a pedido do responsável. Posteriormente, a prévia 0.2.0 foi publicada por solicitação do responsável; detalhes técnicos e limitações estão em [VALIDATION.md](VALIDATION.md) e [LINUX.md](LINUX.md).
+**Ponto de pausa: 23/11/2026.** Atividades encerradas a pedido do responsável. Posteriormente, a prévia 0.2.0 foi publicada por solicitação do responsável; detalhes técnicos e limitações estão em [docs/VALIDATION.md](docs/VALIDATION.md) e [docs/LINUX.md](docs/LINUX.md).
+
+## Contribuição
+
+Veja [CONTRIBUTING.md](CONTRIBUTING.md) para setup, comandos de qualidade e pull requests. `npm run format` aplica a formatação; `npm run format:check` verifica sem editar. Reportes de vulnerabilidade seguem [SECURITY.md](SECURITY.md).
 
 ## Licença
 
@@ -277,6 +286,6 @@ O código do TelaLeve é distribuído sob a **licença MIT**. Consulte [LICENSE]
 
 **TelaLeve** · Em desenvolvimento · Validação parcial
 
-[Validação](VALIDATION.md) · [AppImage](APPIMAGE.md) · [Histórico](HISTORY.md) · [Releases](https://github.com/ThiagoSales17/telaleve/releases)
+[Validação](docs/VALIDATION.md) · [AppImage](docs/APPIMAGE.md) · [Histórico](docs/HISTORY.md) · [Releases](https://github.com/ThiagoSales17/telaleve/releases)
 
 </div>

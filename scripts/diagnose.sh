@@ -21,6 +21,6 @@ fi
 if "$portal"; then
     if command -v gdbus >/dev/null 2>&1 && gdbus introspect --session --dest org.freedesktop.portal.Desktop --object-path /org/freedesktop/portal/desktop 2>/dev/null | grep -q 'org.freedesktop.portal.ScreenCast'; then
         printf 'OK portal ScreenCast (a seleção real ainda precisa ser testada)\n'
-    else printf 'AUSENTE portal ScreenCast acessível; configure o backend do desktop conforme LINUX.md.\n'; failed=1; fi
+    else printf 'AUSENTE portal ScreenCast acessível; configure o backend do desktop conforme docs/LINUX.md.\n'; failed=1; fi
 fi
 exit "$failed"

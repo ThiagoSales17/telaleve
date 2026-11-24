@@ -109,3 +109,11 @@ A implementação amplia a compatibilidade; não demonstra funcionamento em toda
 ### Ponto de pausa — 23/11/2026
 
 Atividades encerradas a pedido do responsável. Na última conferência da [execução CI do código `33c70a9`](https://github.com/ThiagoSales17/telaleve/actions/runs/45293401929), Fedora 45, Arch, openSUSE Tumbleweed e Ubuntu 24.04 ARM64 concluíram com sucesso; Ubuntu 22.04 e 24.04 x86_64 ainda executavam verificações. Foi solicitado o cancelamento da execução ao pausar. Essas verificações restantes devem ser retomadas antes da publicação da prévia 0.2.0, que permanece em rascunho. O roadmap do README registra as próximas etapas.
+
+### Reorganização do repositório — 23/11/2026
+
+Documentação operacional movida para `docs/`, fontes de interface separadas em desktop/viewer/styles e testes agrupados em `tests/`. Os assets em `web/` são reconstruídos por `npm run build:web`; as rotas do receptor foram ajustadas e isoladas em `src-tauri/src/server.rs`.
+
+Validação local: checagem TypeScript, Prettier e rustfmt, suítes frontend (tela cheia e integridade de assets/rotas), oito testes dos scripts Linux, cinco testes de metadados de release e cinco testes do núcleo Rust passaram. Os 14 testes nativos passaram em X11 virtual, incluindo vinte trocas de captura/qualidade. Clippy passou com avisos tratados como erro. O aplicativo iniciou na tela virtual e respondeu às rotas HTTP da página, módulos do receptor e CSS. Links locais da documentação e workflows foram conferidos.
+
+A reorganização não adiciona evidências de transmissão em Wayland real ou Android físico; essas validações permanecem no roadmap.

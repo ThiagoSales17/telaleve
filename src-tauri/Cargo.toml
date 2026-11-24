@@ -22,3 +22,10 @@ ashpd = { version = "0.11", default-features = false, features = ["tokio"] }
 [profile.release]
 opt-level = 2
 strip = true
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
