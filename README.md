@@ -125,14 +125,14 @@ Para solicitar **60 FPS**, selecione **Fluidez** antes de gerar o QR code ou dur
 
 ### Flatpak para diferentes distribuições
 
-O Flatpak x86_64 da versão 0.2.0 foi gerado e testado localmente. Sua publicação está pendente no roadmap. Depois de obter ou gerar o arquivo, execute:
+Os pacotes x86_64 e ARM64 estão na [prévia 0.2.0](https://github.com/ThiagoSales17/telaleve/releases/tag/v0.2.0). Baixe o arquivo da sua arquitetura. Para x86_64, execute:
 
 ```bash
 flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
 flatpak run io.github.ThiagoSales17.TelaLeve
 ```
 
-O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [LINUX.md](LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Os instaladores preparados são x86_64; ARM64 exige build nativo. Um clone Git não contém os instaladores.
+O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [LINUX.md](LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Há instaladores x86_64 e ARM64 na release. Um clone Git não contém os instaladores.
 
 ### Pacote Debian (`.deb`)
 
@@ -263,9 +263,9 @@ A compatibilidade será validada por **ambientes representativos**, cobrindo dep
 - [ ] Executar uma sessão contínua de 30 minutos e registrar estabilidade e consumo de recursos.
 - [ ] Testar a instalação do Flatpak em uma amostra de sistemas limpos, com drivers e backends de portal representativos.
 - [ ] Gerar e validar um Flatpak ARM64 em equipamento real; o teste de build ARM64 não substitui esse aceite.
-- [ ] Publicar a prévia 0.2.0 com os instaladores e resultados de validação.
+- [x] Publicar a [prévia 0.2.0](https://github.com/ThiagoSales17/telaleve/releases/tag/v0.2.0) com instaladores x86_64/ARM64, checksums e resultados de validação.
 
-**Ponto de pausa: 23/11/2026.** Atividades encerradas a pedido do responsável. A prévia 0.2.0 permanece como rascunho; detalhes técnicos e limitações estão em [VALIDATION.md](VALIDATION.md) e [LINUX.md](LINUX.md).
+**Ponto de pausa: 23/11/2026.** Atividades encerradas a pedido do responsável. Posteriormente, a prévia 0.2.0 foi publicada por solicitação do responsável; detalhes técnicos e limitações estão em [VALIDATION.md](VALIDATION.md) e [LINUX.md](LINUX.md).
 
 ## Licença
 

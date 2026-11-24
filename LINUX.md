@@ -18,7 +18,7 @@ Para compilar nativamente: Rust estável, Node.js 22 LTS/npm (ou outro Node comp
 
 ## Instalar um Flatpak pronto
 
-O Flatpak x86_64 da versão 0.2.0 foi gerado localmente; a publicação da prévia permanece pendente no roadmap do README. Depois de obter ou gerar o pacote, execute na pasta do arquivo. Para ARM64, gere um pacote nativo:
+Os pacotes x86_64 e ARM64 estão na [prévia 0.2.0](https://github.com/ThiagoSales17/telaleve/releases/tag/v0.2.0). Baixe o arquivo correspondente à arquitetura e execute na pasta do download (para ARM64, substitua `x86_64` por `aarch64`):
 
 ```sh
 flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
