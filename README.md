@@ -230,7 +230,7 @@ O foco atual é **compartilhar vídeo do Linux para um único Chrome no Android 
 
 ## Releases automáticas
 
-O workflow [Release](https://github.com/ThiagoSales17/telaleve/actions/workflows/release.yml) compila, testa e empacota **Flatpak e `.deb` para x86_64 e ARM64**. A publicação ocorre automaticamente ao enviar uma tag `vMAJOR.MINOR.PATCH`, após os dois builds passarem. Versões `0.x` e versões com sufixo, como `-beta.1`, são publicadas como prévias.
+O workflow [Release](https://github.com/ThiagoSales17/telaleve/actions/workflows/release.yml) compila, testa e empacota **Flatpak e `.deb` para x86_64 e ARM64**. Cada push na `main` publica automaticamente uma **prévia do commit**, com tag `dev-<SHA>`, após os dois builds passarem. Os pacotes dessas prévias mantêm a versão-base do projeto, sem incrementar silenciosamente o SemVer; a tag identifica o build. Envios com vários commits geram uma prévia do último commit. Tags `vMAJOR.MINOR.PATCH` continuam publicando as releases versionadas. Commits com `[skip ci]` não executam o workflow. Versões `0.x` e versões com sufixo, como `-beta.1`, são publicadas como prévias.
 
 Antes de criar a tag, atualize a mesma versão em `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` e `src-tauri/tauri.conf.json`. O workflow recusa versões divergentes e tags que não correspondam ao código. Exemplo, depois de preparar a versão 0.2.1:
 
@@ -239,7 +239,7 @@ git tag -a v0.2.1 -m "TelaLeve 0.2.1"
 git push origin v0.2.1
 ```
 
-O botão **Run workflow** executa os builds e disponibiliza os pacotes como artefatos durante 14 dias, sem publicar uma release. Não é necessário cadastrar um token pessoal: a publicação usa o token temporário do GitHub, com permissão de escrita somente no job de publicação.
+Para publicar uma versão SemVer, siga o exemplo acima. O botão **Run workflow** executa os builds e disponibiliza os pacotes como artefatos durante 14 dias, sem publicar uma release. Não é necessário cadastrar um token pessoal: a publicação usa o token temporário do GitHub, com permissão de escrita somente no job de publicação.
 
 Releases já publicadas não são sobrescritas. Para corrigir uma release, publique uma nova versão PATCH. Para voltar a uma versão anterior, baixe seus pacotes na página de Releases; remover ou mover tags não faz rollback de instalações existentes. Falhas nos testes ou em qualquer arquitetura impedem a publicação.
 
