@@ -228,6 +228,21 @@ O foco atual é **compartilhar vídeo do Linux para um único Chrome no Android 
 - Acesso pela internet
 - Múltiplos receptores simultâneos
 
+## Releases automáticas
+
+O workflow [Release](https://github.com/ThiagoSales17/telaleve/actions/workflows/release.yml) compila, testa e empacota **Flatpak e `.deb` para x86_64 e ARM64**. A publicação ocorre automaticamente ao enviar uma tag `vMAJOR.MINOR.PATCH`, após os dois builds passarem. Versões `0.x` e versões com sufixo, como `-beta.1`, são publicadas como prévias.
+
+Antes de criar a tag, atualize a mesma versão em `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` e `src-tauri/tauri.conf.json`. O workflow recusa versões divergentes e tags que não correspondam ao código. Exemplo, depois de preparar a versão 0.2.1:
+
+```sh
+git tag -a v0.2.1 -m "TelaLeve 0.2.1"
+git push origin v0.2.1
+```
+
+O botão **Run workflow** executa os builds e disponibiliza os pacotes como artefatos durante 14 dias, sem publicar uma release. Não é necessário cadastrar um token pessoal: a publicação usa o token temporário do GitHub, com permissão de escrita somente no job de publicação.
+
+Releases já publicadas não são sobrescritas. Para corrigir uma release, publique uma nova versão PATCH. Para voltar a uma versão anterior, baixe seus pacotes na página de Releases; remover ou mover tags não faz rollback de instalações existentes. Falhas nos testes ou em qualquer arquitetura impedem a publicação.
+
 ## Roadmap
 
 A compatibilidade será validada por **ambientes representativos**, cobrindo dependências, X11, Wayland e o runtime Flatpak. Não é necessário testar cada distribuição existente.
