@@ -29,7 +29,21 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Install dependencies
+        timeout-minutes: 12
         run: |
+          # Avoid slow Azure mirrors on hosted runners (runner-images#14823).
+          # This changes only the ephemeral CI machine, never the user's system.
+          sudo python3 - <<'PYAPT'
+          from pathlib import Path
+          files = [Path('/etc/apt/sources.list'), *Path('/etc/apt/sources.list.d').glob('*.sources'), *Path('/etc/apt/sources.list.d').glob('*.list')]
+          for path in files:
+              if path.exists():
+                  content = path.read_text()
+                  content = content.replace('mirror+file:/etc/apt/apt-mirrors.txt', 'http://archive.ubuntu.com/ubuntu')
+                  content = content.replace('http://azure.archive.ubuntu.com/ubuntu', 'http://archive.ubuntu.com/ubuntu')
+                  path.write_text(content)
+          Path('/etc/apt/apt.conf.d/99telaleve-ci').write_text('Acquire::ForceIPv4 "true"; Acquire::Retries "3"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";\n')
+          PYAPT
           ./scripts/install-deps.sh
           sudo apt-get install -y flatpak xvfb xauth
       - name: Prepare Rust
