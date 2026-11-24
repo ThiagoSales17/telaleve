@@ -99,9 +99,13 @@ Adicionado 720p/60 FPS com bitrate inicial de 4 Mbps e máximo de 6 Mbps. Equili
 
 ### Validações ainda necessárias
 
-- Seleção e transmissão reais em GNOME/KDE/wlroots/Hyprland em Wayland, cancelamento pelo compositor, reconexão e troca de origem com vídeo no receptor.
+- Seleção e transmissão reais em desktops Wayland representativos, como GNOME e KDE, cancelamento pelo compositor, reconexão e troca de origem com vídeo no receptor.
 - Android físico, sessão contínua de 30 minutos e benchmarks comparativos.
-- Instalação e uso em sistemas limpos de cada distribuição, com seus drivers e backends de portal.
+- Instalação e uso em uma amostra de sistemas limpos, com drivers e backends de portal representativos. Não é necessário testar cada distribuição existente.
 - Binário/Flatpak ARM64 em equipamento real. O workflow inclui Ubuntu ARM64 e ambientes Fedora, Arch e openSUSE; consulte os resultados de cada execução antes de tratá-los como testes concluídos.
 
 A implementação amplia a compatibilidade; não demonstra funcionamento em todas as versões de Linux, compositores, drivers e arquiteturas existentes. Os artefatos antigos 0.1.3 permanecem limitados ao ambiente descrito nas seções históricas.
+
+### Ponto de pausa — 23/11/2026
+
+Atividades encerradas a pedido do responsável. Na última conferência da [execução CI do código `33c70a9`](https://github.com/ThiagoSales17/telaleve/actions/runs/45293401929), Fedora 45, Arch, openSUSE Tumbleweed e Ubuntu 24.04 ARM64 concluíram com sucesso; Ubuntu 22.04 e 24.04 x86_64 ainda executavam verificações. Foi solicitado o cancelamento da execução ao pausar. Essas verificações restantes devem ser retomadas antes da publicação da prévia 0.2.0, que permanece em rascunho. O roadmap do README registra as próximas etapas.

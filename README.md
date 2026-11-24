@@ -125,14 +125,14 @@ Para solicitar **60 FPS**, selecione **Fluidez** antes de gerar o QR code ou dur
 
 ### Flatpak para diferentes distribuições
 
-Depois de baixar ou gerar o pacote correspondente à arquitetura, execute na pasta do arquivo:
+O Flatpak x86_64 da versão 0.2.0 foi gerado e testado localmente. Sua publicação está pendente no roadmap. Depois de obter ou gerar o arquivo, execute:
 
 ```bash
 flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
 flatpak run io.github.ThiagoSales17.TelaLeve
 ```
 
-O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [LINUX.md](LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Os arquivos prontos dependem da disponibilidade nas releases; um clone Git não contém os instaladores.
+O pacote usa o runtime **GNOME 51** e seleciona a captura conforme a sessão: X11 direto ou portal/PipeWire em Wayland. Em Wayland, o compositor precisa oferecer ScreenCast. Consulte [LINUX.md](LINUX.md) para ARM64, requisitos, geração do pacote e limitações. Os instaladores preparados são x86_64; ARM64 exige build nativo. Um clone Git não contém os instaladores.
 
 ### Pacote Debian (`.deb`)
 
@@ -220,13 +220,37 @@ Repita a medição com o processo principal do **Deskreen**, usando a mesma conf
 
 ## 🗺️ Escopo desta versão
 
-O foco atual é **compartilhar vídeo de uma sessão X11 para um único Chrome no Android pela rede local**. Os seguintes recursos estão **fora do escopo da versão atual**:
+O foco atual é **compartilhar vídeo do Linux para um único Chrome no Android pela rede local**, com captura X11 e implementação Wayland por portal/PipeWire ainda em validação. Os seguintes recursos estão **fora do escopo da versão atual**:
 
 - Transmissão de áudio
 - Controle remoto do computador
 - Monitor virtual
 - Acesso pela internet
 - Múltiplos receptores simultâneos
+
+## Roadmap
+
+A compatibilidade será validada por **ambientes representativos**, cobrindo dependências, X11, Wayland e o runtime Flatpak. Não é necessário testar cada distribuição existente.
+
+### Concluído nesta etapa
+
+- [x] Implementar captura X11 com fallback quando RandR não está disponível.
+- [x] Implementar seleção Wayland por portal ScreenCast/PipeWire, com autorização do sistema.
+- [x] Preparar dependências para Debian/Ubuntu, Fedora, Arch e openSUSE.
+- [x] Gerar Flatpak x86_64 e testar captura X11 e inicialização no runtime GNOME 51.
+- [x] Executar 14 testes nativos, incluindo trocas de origem, cancelamento de sessão e limite de quadros de taxa variável.
+
+### Próximas etapas
+
+- [ ] Retomar e concluir a conferência CI de Ubuntu 22.04 e 24.04 x86_64. Na pausa, Fedora, Arch, openSUSE e Ubuntu 24.04 ARM64 já haviam passado na [execução da versão final](https://github.com/ThiagoSales17/telaleve/actions/runs/45293401929).
+- [ ] Validar seleção, transmissão, cancelamento pelo compositor, troca de origem e reconexão em desktops Wayland reais representativos, como GNOME e KDE.
+- [ ] Validar com Android físico: pareamento, aprovação, vídeo, codecs, tela cheia e reconexão.
+- [ ] Executar uma sessão contínua de 30 minutos e registrar estabilidade e consumo de recursos.
+- [ ] Testar a instalação do Flatpak em uma amostra de sistemas limpos, com drivers e backends de portal representativos.
+- [ ] Gerar e validar um Flatpak ARM64 em equipamento real; o teste de build ARM64 não substitui esse aceite.
+- [ ] Publicar a prévia 0.2.0 com os instaladores e resultados de validação.
+
+**Ponto de pausa: 23/11/2026.** Atividades encerradas a pedido do responsável. A prévia 0.2.0 permanece como rascunho; detalhes técnicos e limitações estão em [VALIDATION.md](VALIDATION.md) e [LINUX.md](LINUX.md).
 
 ## Licença
 
