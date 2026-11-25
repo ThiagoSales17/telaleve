@@ -170,6 +170,14 @@ Consulte [CONTRIBUTING.md](CONTRIBUTING.md#testes) para executar as suítes e co
 | [Segurança](SECURITY.md) | Uso seguro e reporte de vulnerabilidades |
 | [Releases](https://github.com/ThiagoSales17/telaleve/releases) | Instaladores e versões disponíveis |
 
+## Contribuidores
+
+Obrigado a todas as pessoas que ajudam a construir o TelaLeve com código, documentação, testes e sugestões.
+
+<a href="https://github.com/ThiagoSales17"><img src="https://github.com/ThiagoSales17.png?size=80" width="64" height="64" alt="ThiagoSales17" /></a>
+
+[Ver todos os contribuidores](https://github.com/ThiagoSales17/telaleve/graphs/contributors) · [Como contribuir](CONTRIBUTING.md)
+
 ## Licença
 
 Distribuído sob a licença [MIT](LICENSE). Componentes de terceiros mantêm suas respectivas licenças.
