@@ -134,13 +134,15 @@ jobs:
           set -euo pipefail
           if [ "$GITHUB_REF_TYPE" = branch ]; then
             TITLE="TelaLeve ${VERSION} (preview automático)"
-          else
+          elif [ "$PRERELEASE" = true ]; then
             TITLE="TelaLeve ${VERSION} (preview Linux)"
+          else
+            TITLE="TelaLeve ${VERSION}"
           fi
           cat > /tmp/release-notes.md <<'NOTES'
-          # TelaLeve __VERSION__ (preview Linux)
+          # TelaLeve __VERSION__
 
-          Pacotes Linux gerados automaticamente pelo GitHub Actions para x86_64 e ARM64.
+          Pacotes Linux gerados automaticamente pelo GitHub Actions. Instalação e transmissão para Android físico foram validadas pelo mantenedor em X11. Wayland, ARM64 e outras combinações não validadas permanecem experimentais.
 
           Prefira o Flatpak para diferentes distribuições; os pacotes Debian foram compilados em Ubuntu 24.04. Consulte README.md, docs/LINUX.md e CONTRIBUTING.md para requisitos e limites. A validação automática não substitui os testes com Wayland real e Android físico.
 

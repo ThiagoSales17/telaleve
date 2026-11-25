@@ -1,6 +1,6 @@
 # Compatibilidade Linux
 
-O TelaLeve 0.2.0 amplia o projeto para desktops Linux com X11 ou Wayland. O pacote Flatpak é a opção para usar o mesmo aplicativo entre distribuições com bibliotecas diferentes. Isso não equivale a uma garantia de funcionamento em toda versão, arquitetura ou compositor existente: o estado de compatibilidade e as validações pendentes ficam no [README](../README.md#compatibilidade).
+O TelaLeve 1.0.0 amplia o projeto para desktops Linux com X11 ou Wayland. O pacote Flatpak é a opção para usar o mesmo aplicativo entre distribuições com bibliotecas diferentes. Isso não equivale a uma garantia de funcionamento em toda versão, arquitetura ou compositor existente: o estado de compatibilidade e as validações pendentes ficam no [README](../README.md#compatibilidade).
 
 ## Estado do suporte
 
@@ -22,10 +22,10 @@ Para compilar nativamente: Rust estável, Node.js 22 LTS/npm (ou outro Node comp
 
 ## Instalar um Flatpak pronto
 
-Os pacotes x86_64 e ARM64 estão na [prévia 0.2.0](https://github.com/ThiagoSales17/telaleve/releases/tag/v0.2.0). Baixe o arquivo correspondente à arquitetura e execute na pasta do download (para ARM64, substitua `x86_64` por `aarch64`):
+Os pacotes x86_64 e ARM64 estão na [versão 1.0.0](https://github.com/ThiagoSales17/telaleve/releases/tag/v1.0.0). Baixe o arquivo correspondente à arquitetura e execute na pasta do download (para ARM64, substitua `x86_64` por `aarch64`):
 
 ```sh
-flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
+flatpak install --user ./TelaLeve-1.0.0-x86_64.flatpak
 flatpak run io.github.ThiagoSales17.TelaLeve
 ```
 

@@ -32,7 +32,7 @@ TelaLeve é um aplicativo desktop desenvolvido em **Rust, Tauri 2 e GStreamer** 
 - Pareamento com aprovação explícita no computador.
 
 > [!NOTE]
-> Instalação e uso com celular Android foram validados pelo mantenedor em X11. Wayland, ARM64 e outras combinações ainda não validadas são experimentais. A versão publicada 0.2.0 permanece uma prévia.
+> Instalação e uso com celular Android foram validados pelo mantenedor em X11. Wayland, ARM64 e outras combinações ainda não validadas são experimentais. A versão 1.0.0 é estável para o ambiente X11 validado.
 
 ## Instalação
 
@@ -43,7 +43,7 @@ Baixe os pacotes na página de [Releases](https://github.com/ThiagoSales17/telal
 Disponível para x86_64 e ARM64 (experimental). Baixe o arquivo correspondente à sua arquitetura. Exemplo para x86_64:
 
 ```bash
-flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
+flatpak install --user ./TelaLeve-1.0.0-x86_64.flatpak
 flatpak run io.github.ThiagoSales17.TelaLeve
 ```
 
@@ -54,7 +54,7 @@ O pacote utiliza o runtime GNOME 51. Consulte [LINUX.md](docs/LINUX.md) para req
 Após baixar o pacote correspondente à sua arquitetura, instale-o com `apt`. Exemplo para amd64:
 
 ```bash
-sudo apt install ./telaleve_0.2.0_amd64.deb
+sudo apt install ./telaleve_1.0.0_amd64.deb
 ```
 
 O pacote depende de bibliotecas compatíveis com o sistema. Para maior portabilidade entre distribuições, prefira o Flatpak.
