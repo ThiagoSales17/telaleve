@@ -14,9 +14,9 @@ npm ci
 
 Os comandos de metadados de release exigem Python 3.11 ou superior. O instalador não instala Rust; prepare o toolchain estável antes dos checks nativos.
 
-## Verificações antes de abrir um pull request
+## Testes
 
-Execute os checks relevantes para a mudança. O workflow [Linux](.github/workflows/linux.yml) é a referência para os comandos de CI.
+Execute as verificações relevantes para a mudança. O [workflow Linux](.github/workflows/linux.yml) define os ambientes e comandos de CI; consulte os resultados da execução para confirmar o que passou.
 
 ```sh
 npm run check
@@ -25,13 +25,38 @@ npm test
 npm run test:linux
 npm run test:release
 npm run format:check
-python3 tests/linux/scripts.test.py
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-cargo test --locked --manifest-path tests/core/Cargo.toml
-cargo test --locked --manifest-path src-tauri/Cargo.toml
+npm run test:core
+npm run test:native
+npm run lint:rust
 ```
 
-Os testes nativos de captura dependem de X11 e plugins GStreamer; veja `docs/VALIDATION.md` antes de executá-los. Não declare validação em Wayland ou Android físico sem realizar e registrar os testes correspondentes.
+| Suíte | Cobertura |
+| --- | --- |
+| `tests/frontend/` | Tela cheia, histórico e integridade dos assets e rotas |
+| `tests/linux/` | Instalador, diagnóstico e empacotador com ferramentas simuladas |
+| `tests/release/` | SemVer, versões dos manifests e validação da tag |
+| `tests/core/` | Modelo Rust e seleção de backend sem GTK/GStreamer |
+| `src-tauri/src/` | Mídia, captura e controle de sessão |
+
+Compile os assets antes dos testes frontend. As suítes Python não instalam pacotes nem alteram a sessão gráfica. A integração X11 é ignorada por padrão; para executá-la com servidor gráfico virtual e plugins GStreamer disponíveis:
+
+```sh
+xvfb-run -a env XDG_SESSION_TYPE=x11 cargo test --locked --manifest-path src-tauri/Cargo.toml -- --include-ignored
+```
+
+### Validação manual
+
+Antes de anunciar suporte em um ambiente, verifique:
+
+- Pareamento, aprovação no desktop, recusa de código expirado e de segundo receptor.
+- Vídeo no Android físico, codecs disponíveis e saída de tela cheia.
+- Troca de monitor/janela e qualidade; falha ou remoção da origem.
+- Interrupção da rede, reconexão e novo pareamento após expiração.
+- Transmissão por 30 minutos, observando estabilidade e uso de memória.
+- Seleção e cancelamento pelo portal em Wayland, em desktops representativos.
+- Instalação em sistemas limpos e uso em hardware ARM64.
+
+Testes X11 virtuais não comprovam transmissão em Wayland ou Android físico. Registre ambiente, versão/commit, passos e resultados na issue ou no pull request correspondente. O estado de compatibilidade e as pendências ficam no README.
 
 ## Pull requests
 

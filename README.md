@@ -153,7 +153,7 @@ cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored
 
 Há verificações automatizadas e testes nativos registrados, incluindo captura X11. A validação completa em Wayland, Android físico, sessões prolongadas e instalações em sistemas limpos permanece pendente.
 
-Consulte [VALIDATION.md](docs/VALIDATION.md) para resultados e critérios de aceite.
+Consulte [CONTRIBUTING.md](CONTRIBUTING.md#testes) para executar as suítes e conhecer os cenários de validação manual.
 
 ## Roadmap
 
@@ -165,8 +165,9 @@ Consulte [VALIDATION.md](docs/VALIDATION.md) para resultados e critérios de ace
 | Documento | Conteúdo |
 | :-- | :-- |
 | [LINUX.md](docs/LINUX.md) | Compatibilidade, dependências e empacotamento |
-| [VALIDATION.md](docs/VALIDATION.md) | Testes, resultados e critérios de validação |
-| [HISTORY.md](docs/HISTORY.md) | Histórico de desenvolvimento |
+| [Arquitetura](docs/architecture.md) | Componentes e fluxo de dados |
+| [Contribuição](CONTRIBUTING.md) | Desenvolvimento, testes e pull requests |
+| [Segurança](SECURITY.md) | Uso seguro e reporte de vulnerabilidades |
 | [Releases](https://github.com/ThiagoSales17/telaleve/releases) | Instaladores e versões disponíveis |
 
 ## Licença
@@ -179,6 +180,6 @@ Distribuído sob a licença [MIT](LICENSE). Componentes de terceiros mantêm sua
 
 **TelaLeve** · Rust + Tauri + GStreamer + WebRTC
 
-[Downloads](https://github.com/ThiagoSales17/telaleve/releases) · [Documentação](docs/LINUX.md) · [Validação](docs/VALIDATION.md)
+[Downloads](https://github.com/ThiagoSales17/telaleve/releases) · [Documentação](docs/LINUX.md) · [Contribuição](CONTRIBUTING.md)
 
 </div>

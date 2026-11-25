@@ -25,7 +25,7 @@ flowchart LR
 | `src-tauri/src/model.rs` | Modelo de acesso, origens e qualidade |
 | `src-tauri/src/capture.rs`, `platform.rs`, `portal.rs` | Seleção de backend e captura |
 | `src-tauri/src/media.rs` | Pipeline de mídia, codecs e troca de origem |
-| `tests/` | Suítes separadas por responsabilidade; veja [guia dos testes](../tests/README.md) |
+| `tests/` | Suítes separadas por responsabilidade; veja [guia dos testes](../CONTRIBUTING.md#testes) |
 | `scripts/` | Build, sincronização dos assets, diagnóstico e empacotamento |
 
 `npm run build:web` compila TypeScript mantendo a estrutura de módulos e copia HTML/CSS para `web/`. Edite os fontes em `frontend/`, não os arquivos gerados. Os gerados permanecem versionados para permitir compilação Rust direta e detectar divergências no CI.
@@ -34,4 +34,4 @@ O servidor entrega `/`, `/style.css`, `/viewer/main.js`, `/viewer/fullscreen.js`
 
 ## Limites
 
-A sinalização HTTP/WebSocket não usa TLS e o servidor escuta em IPv4. O uso previsto é em uma rede local confiável. O vídeo usa WebRTC. Requisitos e verificações efetivamente realizadas estão em [LINUX.md](LINUX.md) e [VALIDATION.md](VALIDATION.md).
+A sinalização HTTP/WebSocket não usa TLS e o servidor escuta em IPv4. O uso previsto é em uma rede local confiável. O vídeo usa WebRTC. Requisitos e verificações efetivamente realizadas estão em [guia Linux](LINUX.md) e no [README](../README.md#compatibilidade).

@@ -1,6 +1,6 @@
 # Compatibilidade Linux
 
-O TelaLeve 0.2.0 amplia o projeto para desktops Linux com X11 ou Wayland. O pacote Flatpak é a opção para usar o mesmo aplicativo entre distribuições com bibliotecas diferentes. Isso não equivale a uma garantia de funcionamento em toda versão, arquitetura ou compositor existente: os resultados efetivamente obtidos ficam em VALIDATION.md.
+O TelaLeve 0.2.0 amplia o projeto para desktops Linux com X11 ou Wayland. O pacote Flatpak é a opção para usar o mesmo aplicativo entre distribuições com bibliotecas diferentes. Isso não equivale a uma garantia de funcionamento em toda versão, arquitetura ou compositor existente: o estado de compatibilidade e as validações pendentes ficam no [README](../README.md#compatibilidade).
 
 ## Formatos e requisitos
 
@@ -12,7 +12,7 @@ O TelaLeve 0.2.0 amplia o projeto para desktops Linux com X11 ou Wayland. O paco
 | openSUSE | Flatpak ou build nativo com Zypper | X11 ou portal/PipeWire |
 | Outras distribuições com Flatpak | Flatpak, com runtime GNOME 51 disponível | X11 ou portal/PipeWire |
 
-O empacotador Flatpak aceita **x86_64 e aarch64**. Gere um binário nativo para cada arquitetura; renomear um binário não o converte. Não há artefato ARM64 validado neste computador. Sistemas sem sessão gráfica ou sem suporte ao runtime necessário precisam de preparação adicional. Em Wayland, um portal ScreenCast também é obrigatório. Não há suporte binário anunciado a 32 bits ou RISC-V.
+O empacotador Flatpak aceita **x86_64 e aarch64**. Gere um binário nativo para cada arquitetura; renomear um binário não o converte. A validação em hardware ARM64 permanece pendente. Sistemas sem sessão gráfica ou sem suporte ao runtime necessário precisam de preparação adicional. Em Wayland, um portal ScreenCast também é obrigatório. Não há suporte binário anunciado a 32 bits ou RISC-V.
 
 Para compilar nativamente: Rust estável, Node.js 22 LTS/npm (ou outro Node compatível com o toolchain), compilador C/C++, GTK 3, WebKitGTK **4.1**, GStreamer **1.20 ou superior**, plugins VP8/WebRTC/ICE e bibliotecas X11. Em Wayland, também são necessários PipeWire, o elemento GStreamer `pipewiresrc` e um backend de `xdg-desktop-portal` com ScreenCast.
 
@@ -84,7 +84,16 @@ Para um `.deb` da arquitetura local em Debian/Ubuntu:
 
 A versão é lida de `package.json` e a arquitetura de `dpkg --print-architecture`. Compile nativamente antes de empacotar. Esse caminho não produz RPM nem um binário universal.
 
-O empacotador manual de AppImage em `scripts/package-appimage.py` continua específico do ambiente Debian x86_64 descrito em APPIMAGE.md. Ele inclui os plugins de captura X11 e PipeWire; não é o caminho de distribuição universal.
+### AppImage legado
+
+As versões antigas oferecem AppImage para Debian 13 x86_64/X11; prefira Flatpak nas versões atuais. Para executar um desses arquivos:
+
+```sh
+chmod +x TelaLeve-*.AppImage
+./TelaLeve-<versão>-x86_64.AppImage
+```
+
+Sem FUSE, acrescente `--appimage-extract-and-run`. O empacotador manual `scripts/package-appimage.py` depende de linuxdeploy, appimagetool e runtime AppImage x86_64. Consulte `python3 scripts/package-appimage.py --help` para os argumentos. Ele inclui bibliotecas e plugins do sistema de build e não produz um pacote universal entre distribuições.
 
 ## Verificações
 
