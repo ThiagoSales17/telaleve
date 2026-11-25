@@ -1,0 +1,184 @@
+name: Release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: x86_64
+          - os: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate versions and tag
+        run: python3 scripts/release-metadata.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        timeout-minutes: 12
+        run: |
+          # Avoid slow Azure mirrors on hosted runners (runner-images#14823).
+          # This changes only the ephemeral CI machine, never the user's system.
+          sudo python3 - <<'PYAPT'
+          from pathlib import Path
+          files = [Path('/etc/apt/sources.list'), *Path('/etc/apt/sources.list.d').glob('*.sources'), *Path('/etc/apt/sources.list.d').glob('*.list')]
+          for path in files:
+              if path.exists():
+                  content = path.read_text()
+                  content = content.replace('mirror+file:/etc/apt/apt-mirrors.txt', 'http://archive.ubuntu.com/ubuntu')
+                  content = content.replace('http://azure.archive.ubuntu.com/ubuntu', 'http://archive.ubuntu.com/ubuntu')
+                  path.write_text(content)
+          Path('/etc/apt/apt.conf.d/99telaleve-ci').write_text('Acquire::ForceIPv4 "true"; Acquire::Retries "3"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";\n')
+          PYAPT
+          ./scripts/install-deps.sh
+          sudo apt-get install -y flatpak xvfb xauth
+      - name: Prepare Rust
+        run: rustup update stable && rustup default stable && rustup component add rustfmt clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: release-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Test and compile web
+        run: |
+          npm ci
+          npm run check
+          npm run format:check
+          npm run build:web
+          npm test
+          python3 tests/linux/scripts.test.py
+          python3 tests/release/metadata.test.py
+          git diff --exit-code -- web/
+      - name: Test native application
+        run: |
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo test --locked --manifest-path tests/core/Cargo.toml
+          cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+          xvfb-run -a env XDG_SESSION_TYPE=x11 cargo test --locked --manifest-path src-tauri/Cargo.toml -- --include-ignored
+      - name: Build and package
+        run: |
+          cargo build --release --locked --manifest-path src-tauri/Cargo.toml
+          ./scripts/package-binary.sh
+          ./scripts/package-flatpak.sh
+          dpkg-deb --info dist/*.deb
+          cd dist
+          sha256sum *.deb *.flatpak > SHA256SUMS-${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: telaleve-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: python3 scripts/release-metadata.py
+      - name: Identify automatic preview
+        id: release
+        env:
+          VERSION_TAG: ${{ steps.version.outputs.tag }}
+          VERSION_PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            echo "tag=dev-$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$VERSION_TAG" >> "$GITHUB_OUTPUT"
+            echo "prerelease=$VERSION_PRERELEASE" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: telaleve-*
+          merge-multiple: true
+          path: dist
+      - name: Verify artifacts
+        run: |
+          cd dist
+          sha256sum -c SHA256SUMS-x86_64
+          sha256sum -c SHA256SUMS-aarch64
+          cat SHA256SUMS-x86_64 SHA256SUMS-aarch64 > SHA256SUMS
+          rm SHA256SUMS-x86_64 SHA256SUMS-aarch64
+      - name: Publish release after both builds succeed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            TITLE="TelaLeve ${VERSION} (preview automático)"
+          else
+            TITLE="TelaLeve ${VERSION} (preview Linux)"
+          fi
+          cat > /tmp/release-notes.md <<'NOTES'
+          # TelaLeve __VERSION__ (preview Linux)
+
+          Pacotes Linux gerados automaticamente pelo GitHub Actions para x86_64 e ARM64.
+
+          Prefira o Flatpak para diferentes distribuições; os pacotes Debian foram compilados em Ubuntu 24.04. Consulte README.md, docs/LINUX.md e CONTRIBUTING.md para requisitos e limites. A validação automática não substitui os testes com Wayland real e Android físico.
+
+          ## Downloads
+
+          - x86_64: `TelaLeve-__VERSION__-x86_64.flatpak` ou `telaleve___VERSION___amd64.deb`.
+          - ARM64: `TelaLeve-__VERSION__-aarch64.flatpak` ou `telaleve___VERSION___arm64.deb`.
+          - Integridade: confira os arquivos com `sha256sum -c SHA256SUMS`.
+
+          ```sh
+          flatpak install --user ./TelaLeve-__VERSION__-x86_64.flatpak
+          flatpak run io.github.ThiagoSales17.TelaLeve
+          ```
+
+          Para ARM64, use o arquivo `aarch64` no comando de instalação.
+
+          ## Origem e validação
+
+          Os pacotes x86_64 e ARM64 são compilados no GitHub Actions em Ubuntu 24.04, com testes nativos e captura X11 em display virtual. Consulte README.md, docs/LINUX.md e CONTRIBUTING.md para requisitos, limites e o que permanece sem validação em Wayland real e Android físico.
+
+          Licença do projeto: MIT. Componentes de terceiros mantêm suas licenças.
+          NOTES
+          sed -i "s/__VERSION__/${VERSION}/g" /tmp/release-notes.md
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            printf '\nPrévia automática do commit `%s`. Os pacotes mantêm a versão-base do projeto (`%s`); a tag dev identifica este build.\n' "$GITHUB_SHA" "$VERSION" >> /tmp/release-notes.md
+          fi
+          if gh release view "$TAG" --json isDraft > /tmp/release.json; then
+            test "$(jq -r .isDraft /tmp/release.json)" = true || { echo 'Release já publicada; use uma nova versão.'; exit 1; }
+            gh release upload "$TAG" --clobber dist/*
+            gh release edit "$TAG" --title "$TITLE" --notes-file /tmp/release-notes.md --prerelease="$PRERELEASE" --draft=false
+          else
+            args=(--draft --title "$TITLE" --notes-file /tmp/release-notes.md)
+            if [ "$GITHUB_REF_TYPE" = branch ]; then
+              args+=(--target "$GITHUB_SHA")
+            else
+              args+=(--generate-notes --verify-tag)
+            fi
+            if [ "$PRERELEASE" = true ]; then args+=(--prerelease); fi
+            gh release create "$TAG" "${args[@]}" dist/*
+            gh release edit "$TAG" --draft=false
+          fi
