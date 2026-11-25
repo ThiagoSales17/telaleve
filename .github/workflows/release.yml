@@ -142,7 +142,7 @@ jobs:
 
           Pacotes Linux gerados automaticamente pelo GitHub Actions para x86_64 e ARM64.
 
-          Prefira o Flatpak para diferentes distribuições; os pacotes Debian foram compilados em Ubuntu 24.04. Consulte README.md, docs/LINUX.md e docs/VALIDATION.md para requisitos e limites. A validação automática não substitui os testes com Wayland real e Android físico.
+          Prefira o Flatpak para diferentes distribuições; os pacotes Debian foram compilados em Ubuntu 24.04. Consulte README.md, docs/LINUX.md e CONTRIBUTING.md para requisitos e limites. A validação automática não substitui os testes com Wayland real e Android físico.
 
           ## Downloads
 
@@ -159,7 +159,7 @@ jobs:
 
           ## Origem e validação
 
-          Os pacotes x86_64 e ARM64 são compilados no GitHub Actions em Ubuntu 24.04, com testes nativos e captura X11 em display virtual. Consulte README.md, docs/LINUX.md e docs/VALIDATION.md para requisitos, limites e o que permanece sem validação em Wayland real e Android físico.
+          Os pacotes x86_64 e ARM64 são compilados no GitHub Actions em Ubuntu 24.04, com testes nativos e captura X11 em display virtual. Consulte README.md, docs/LINUX.md e CONTRIBUTING.md para requisitos, limites e o que permanece sem validação em Wayland real e Android físico.
 
           Licença do projeto: MIT. Componentes de terceiros mantêm suas licenças.
           NOTES
