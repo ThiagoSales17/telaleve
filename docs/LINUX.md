@@ -2,6 +2,10 @@
 
 O TelaLeve 0.2.0 amplia o projeto para desktops Linux com X11 ou Wayland. O pacote Flatpak é a opção para usar o mesmo aplicativo entre distribuições com bibliotecas diferentes. Isso não equivale a uma garantia de funcionamento em toda versão, arquitetura ou compositor existente: o estado de compatibilidade e as validações pendentes ficam no [README](../README.md#compatibilidade).
 
+## Estado do suporte
+
+Instalação e transmissão para um celular Android físico foram validadas pelo mantenedor em X11. Wayland, ARM64 e demais combinações sem validação prática são **experimentais**. Builds e testes em CI não substituem essa validação; a matriz atual fica no [README](../README.md#compatibilidade).
+
 ## Formatos e requisitos
 
 | Ambiente | Caminho de instalação | Captura |
@@ -12,7 +16,7 @@ O TelaLeve 0.2.0 amplia o projeto para desktops Linux com X11 ou Wayland. O paco
 | openSUSE | Flatpak ou build nativo com Zypper | X11 ou portal/PipeWire |
 | Outras distribuições com Flatpak | Flatpak, com runtime GNOME 51 disponível | X11 ou portal/PipeWire |
 
-O empacotador Flatpak aceita **x86_64 e aarch64**. Gere um binário nativo para cada arquitetura; renomear um binário não o converte. A validação em hardware ARM64 permanece pendente. Sistemas sem sessão gráfica ou sem suporte ao runtime necessário precisam de preparação adicional. Em Wayland, um portal ScreenCast também é obrigatório. Não há suporte binário anunciado a 32 bits ou RISC-V.
+O empacotador Flatpak aceita **x86_64 e aarch64**. Gere um binário nativo para cada arquitetura; renomear um binário não o converte. O suporte a ARM64 é **experimental** até validação em equipamento real. Sistemas sem sessão gráfica ou sem suporte ao runtime necessário precisam de preparação adicional. Em Wayland, um portal ScreenCast também é obrigatório. Não há suporte binário anunciado a 32 bits ou RISC-V.
 
 Para compilar nativamente: Rust estável, Node.js 22 LTS/npm (ou outro Node compatível com o toolchain), compilador C/C++, GTK 3, WebKitGTK **4.1**, GStreamer **1.20 ou superior**, plugins VP8/WebRTC/ICE e bibliotecas X11. Em Wayland, também são necessários PipeWire, o elemento GStreamer `pipewiresrc` e um backend de `xdg-desktop-portal` com ScreenCast.
 
@@ -43,7 +47,7 @@ O instalador detecta a família da distribuição usando `/etc/os-release`; `--d
 
 Distros antigas que não oferecem WebKitGTK 4.1/GStreamer 1.20 não passam a ser compatíveis apenas por instalar um `.deb` recente. Use o Flatpak, se o runtime e o kernel forem compatíveis. Para Alpine, Gentoo e NixOS, o build nativo exige a preparação específica de dependências descrita na documentação do Tauri; o instalador automático não gerencia esses ambientes.
 
-## Wayland e seleção de tela
+## Wayland e seleção de tela (experimental)
 
 Configure um backend ScreenCast compatível com o desktop, por exemplo:
 
@@ -107,7 +111,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
-O workflow Linux verifica builds e testes em Ubuntu 22.04/24.04 x86_64 e Ubuntu 24.04 ARM64, exercita captura X11 em tela virtual e testa os ambientes de build de Fedora, Arch e openSUSE em containers. A seleção real em Wayland e a experiência no Android exigem validação separada. Consulte a execução do workflow para distinguir configuração de CI de testes concluídos.
+O workflow Linux verifica builds e testes em Ubuntu 22.04/24.04 x86_64 e Ubuntu 24.04 ARM64, exercita captura X11 em tela virtual e testa os ambientes de build de Fedora, Arch e openSUSE em containers. O uso com Android físico em X11 foi validado pelo mantenedor. Wayland e outras combinações permanecem experimentais até validação prática. Consulte a execução do workflow para distinguir configuração de CI de testes concluídos.
 
 ## Referências de implementação
 

@@ -8,7 +8,7 @@
 
 Compartilhe seu monitor ou uma janela do Linux com o Chrome no Android, sem instalar um aplicativo no celular.
 
-![Status](https://img.shields.io/badge/status-valida%C3%A7%C3%A3o%20parcial-e3b341?style=flat-square)
+![Status](https://img.shields.io/badge/status-X11%20validado-333333?style=flat-square)
 ![Linux](https://img.shields.io/badge/Linux-X11%20%2F%20Wayland-333333?style=flat-square&logo=linux&logoColor=white)
 ![Rust](https://img.shields.io/badge/Rust-Tauri%202-B7410E?style=flat-square&logo=rust&logoColor=white)
 ![WebRTC](https://img.shields.io/badge/streaming-WebRTC-2563EB?style=flat-square)
@@ -24,7 +24,7 @@ Compartilhe seu monitor ou uma janela do Linux com o Chrome no Android, sem inst
 
 TelaLeve é um aplicativo desktop desenvolvido em **Rust, Tauri 2 e GStreamer** que transmite a imagem de um monitor ou janela Linux para o navegador do celular por **WebRTC**.
 
-- Captura de monitor ou janela em X11 e Wayland.
+- Captura de monitor ou janela em X11; Wayland experimental.
 - Conexão local por QR code, sem serviços de nuvem.
 - Codificação H.264 quando disponível, com fallback para VP8.
 - Bitrate adaptativo e quatro perfis de qualidade.
@@ -32,7 +32,7 @@ TelaLeve é um aplicativo desktop desenvolvido em **Rust, Tauri 2 e GStreamer** 
 - Pareamento com aprovação explícita no computador.
 
 > [!NOTE]
-> A versão 0.2.0 é uma prévia com validação parcial. Consulte [Testes e validação](#testes-e-validação) para conhecer o estado atual.
+> Instalação e uso com celular Android foram validados pelo mantenedor em X11. Wayland, ARM64 e outras combinações ainda não validadas são experimentais. A versão publicada 0.2.0 permanece uma prévia.
 
 ## Instalação
 
@@ -40,7 +40,7 @@ Baixe os pacotes na página de [Releases](https://github.com/ThiagoSales17/telal
 
 ### Flatpak — recomendado
 
-Disponível para x86_64 e ARM64. Baixe o arquivo correspondente à sua arquitetura. Exemplo para x86_64:
+Disponível para x86_64 e ARM64 (experimental). Baixe o arquivo correspondente à sua arquitetura. Exemplo para x86_64:
 
 ```bash
 flatpak install --user ./TelaLeve-0.2.0-x86_64.flatpak
@@ -110,14 +110,15 @@ A resolução e a taxa de quadros efetivas dependem da origem, do hardware, da r
 
 | Ambiente | Suporte |
 | :-- | :-- |
-| X11 | Captura implementada e testada nativamente |
-| Wayland | Captura via ScreenCast/portal e PipeWire; validação prática pendente |
-| Debian / Ubuntu | Script de dependências e pacote `.deb` |
-| Fedora / Arch / openSUSE | Script de dependências e distribuição via Flatpak |
-| x86_64 / ARM64 | Pacotes disponíveis |
-| Android | Receptor via Chrome ou Demais Navegadores |
+| X11 | Instalação e transmissão para Android físico validadas pelo mantenedor |
+| Wayland | **Experimental** — captura via ScreenCast/portal e PipeWire; validação prática pendente |
+| Debian / Ubuntu | Script de dependências e pacote `.deb`; instalações fora do ambiente validado são experimentais |
+| Fedora / Arch / openSUSE | **Experimental** — verificações de build em CI; validação de uso real pendente |
+| x86_64 | Builds e testes nativos automatizados disponíveis |
+| ARM64 | **Experimental** — pacotes disponíveis; validação em equipamento real pendente |
+| Android | Uso em celular físico validado pelo mantenedor; outros aparelhos e navegadores são experimentais até validação |
 
-O suporte implementado não implica validação em todas as distribuições, arquiteturas e compositores. Consulte [LINUX.md](docs/LINUX.md) para requisitos específicos.
+A validação cobre o ambiente X11 e o celular utilizados pelo mantenedor; não certifica todas as distribuições, arquiteturas, drivers ou navegadores. Combinações sem validação prática permanecem experimentais, mesmo quando compilam no CI. Consulte [LINUX.md](docs/LINUX.md) para requisitos específicos.
 
 O escopo atual é a transmissão de vídeo para um único receptor. Áudio, controle remoto, monitor virtual e acesso pela internet não fazem parte desta versão.
 
@@ -151,14 +152,15 @@ O teste nativo de integração exige uma sessão X11 acessível e os plugins GSt
 cargo test --manifest-path src-tauri/Cargo.toml -- --include-ignored
 ```
 
-Há verificações automatizadas e testes nativos registrados, incluindo captura X11. A validação completa em Wayland, Android físico, sessões prolongadas e instalações em sistemas limpos permanece pendente.
+O mantenedor confirmou instalação e funcionamento em X11 com celular Android físico. Há também verificações automatizadas e testes nativos de captura X11. Wayland, ARM64 e instalações em outros ambientes permanecem experimentais até validação prática. Duração da sessão, modelos dos dispositivos, navegador e versão do pacote usado não foram registrados; não são declaradas medições de desempenho ou cobertura de todos os cenários.
 
 Consulte [CONTRIBUTING.md](CONTRIBUTING.md#testes) para executar as suítes e conhecer os cenários de validação manual.
 
 ## Roadmap
 
-- [ ] Validar captura e transmissão em desktops Wayland representativos.
-- [ ] Ampliar a validação de instalação e compatibilidade, incluindo hardware ARM64.
+- [x] Validar instalação e uso em X11 com celular Android físico.
+- [ ] Validar captura e transmissão em desktops Wayland representativos (experimental).
+- [ ] Ampliar a validação de instalação e compatibilidade, incluindo hardware ARM64 (experimental).
 
 ## Documentação
 
